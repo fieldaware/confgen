@@ -1,0 +1,2 @@
+# confgen
+Configuration generation tool
