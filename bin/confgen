@@ -1,0 +1,5 @@
+#!/usr/bin/env python
+
+import confgen.main
+import sys
+sys.exit(confgen.main.main())
