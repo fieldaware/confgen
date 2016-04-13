@@ -2,4 +2,4 @@
 
 import confgen.cli
 import sys
-sys.exit(confgen.cli.main())
+sys.exit(confgen.cli.cli())
