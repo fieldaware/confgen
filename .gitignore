@@ -1,4 +1,5 @@
 *.py[c|o]
+*.sw[p|o]
 build/*
 confgen.egg-info
 dist/*
