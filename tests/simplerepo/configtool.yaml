@@ -1,0 +1,30 @@
+level_names:
+    - environment
+    - cluster
+    - service
+
+service: &services
+    webapp:
+    sync:
+    api:
+    auth:
+    cps:
+    admin:
+
+levels:
+    va-prod:
+        main: *services
+        staging: *services
+        demo: *services
+        beta: *services
+    au-prod:
+        main: *services
+    au-dev:
+        qa7: *services
+    eu-dev:
+        qa1: *services
+        qa2: *services
+        qa3: *services
+        qa4: *services
+        qa5: *services
+        qa6: *services
