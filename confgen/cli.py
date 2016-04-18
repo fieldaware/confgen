@@ -10,6 +10,7 @@ def Tree():
     return defaultdict(Tree)
 
 class ConfigTool(object):
+    key_value_tag = "__kvs__"
     def __init__(self, home=None, config=None):
         self.home = home
         self.config = yaml.load(open(config))
@@ -23,25 +24,45 @@ class ConfigTool(object):
         inventory = Tree()
         rootdir = rootdir.rstrip(os.sep)
         start = rootdir.rfind(os.sep) + 1
-        for path, dirs, files in os.walk(rootdir):
+        for path, dirs, files in os.walk(rootdir):  # os.walk you tried to be fun, you are not
             folders = path[start:].split(os.sep)
             parent = reduce(dict.get, folders[:-1], inventory)
             if files:
-                try:
-                    assert files == ['config.yaml']
-                except AssertionError:
-                    raise ConfGenError('expected only config.yaml but found: {}'.format(files))
                 configyml = yaml.load(open(os.path.join(path, 'config.yaml')))
-                parent[folders[-1]] = {'inventory': configyml}
+                node = Tree()
+                node.update({self.key_value_tag: configyml})
+                parent[folders[-1]] = node
             else:
-                parent[folders[-1]] = {}
-        return inventory
+                parent[folders[-1]] = Tree()
+        return inventory['inventory']
 
-    def build(self):
+    def build(self, inventory=None):
         '''
         builds the structure based on loaded files
         '''
+        inventory = self.inventory()
+
+        def _build(current_lvl, kvs):
+            '''
+            Recursively update each node
+            '''
+            if not any([isinstance(v, dict) for v in current_lvl.values()]):
+                return
+            current_kvs = current_lvl.pop(self.key_value_tag, {})
+            kvs_copy = kvs.copy()
+            kvs_copy.update(current_kvs)
+            current_lvl[self.key_value_tag] = kvs_copy
+
+            for k in current_lvl.keys():
+                _build(current_lvl[k], kvs_copy)
+
+        _build(inventory, {})
+        return inventory
+
+    def render(self, build=None):
+        build = build or self.build()
         pass
+
 
     def flush(self):
         '''
