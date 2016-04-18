@@ -10,7 +10,7 @@ def cfgtool(configtool_file):
 def test_load_inventory(cfgtool):
     loaded = cfgtool.inventory
     assert loaded == {
-        'kvstore': {
+        'inventory': {
             'inventory': {'mysql': 1.0},
             'dev': {
                 'qa1': {'inventory': {'mysql': 4.0}}

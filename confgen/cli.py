@@ -1,18 +1,13 @@
 import click
 import yaml
 import os
+from collections import defaultdict
 
 class ConfGenError(Exception):
     pass
 
-class AutoVivification(dict):
-    """Implementation of perl's autovivification feature."""
-    def __getitem__(self, item):
-        try:
-            return dict.__getitem__(self, item)
-        except KeyError:
-            value = self[item] = type(self)()
-            return value
+def Tree():
+    return defaultdict(Tree)
 
 class ConfigTool(object):
     def __init__(self, home=None, config=None):
@@ -25,8 +20,8 @@ class ConfigTool(object):
         '''
         walks to home dir and collects yaml files
         '''
-        rootdir = os.path.join(self.home, 'kvstore')
-        inventory = AutoVivification()
+        rootdir = os.path.join(self.home, 'inventory')
+        inventory = Tree()
         rootdir = rootdir.rstrip(os.sep)
         start = rootdir.rfind(os.sep) + 1
         for path, dirs, files in os.walk(rootdir):
