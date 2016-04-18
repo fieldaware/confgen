@@ -2,20 +2,46 @@ import click
 import yaml
 import os
 
+class ConfGenError(Exception):
+    pass
+
+class AutoVivification(dict):
+    """Implementation of perl's autovivification feature."""
+    def __getitem__(self, item):
+        try:
+            return dict.__getitem__(self, item)
+        except KeyError:
+            value = self[item] = type(self)()
+            return value
+
 class ConfigTool(object):
     def __init__(self, home=None, config=None):
         self.home = home
         self.config = yaml.load(open(config))
         self.configdata_dir = os.path.join(home, 'configdata')
 
-    def load(self):
+    @property
+    def inventory(self):
         '''
         walks to home dir and collects yaml files
         '''
-        struct = {}
-        for path, dirs, files in [i for i in os.walk(os.path.join(self.home, 'kvstore'))]:
+        rootdir = os.path.join(self.home, 'kvstore')
+        inventory = AutoVivification()
+        rootdir = rootdir.rstrip(os.sep)
+        start = rootdir.rfind(os.sep) + 1
+        for path, dirs, files in os.walk(rootdir):
+            folders = path[start:].split(os.sep)
+            parent = reduce(dict.get, folders[:-1], inventory)
             if files:
-                struct[os.path.basename(path)] = yaml.load(open(os.path.join(path, 'config.yaml')))
+                try:
+                    assert files == ['config.yaml']
+                except AssertionError:
+                    raise ConfGenError('expected only config.yaml but found: {}'.format(files))
+                configyml = yaml.load(open(os.path.join(path, 'config.yaml')))
+                parent[folders[-1]] = {'inventory': configyml}
+            else:
+                parent[folders[-1]] = {}
+        return inventory
 
     def build(self):
         '''
