@@ -15,7 +15,6 @@ class ConfigTool(object):
         self.config = yaml.load(open(config))
         self.configdata_dir = os.path.join(home, 'configdata')
 
-    @property
     def inventory(self):
         '''
         walks to home dir and collects yaml files

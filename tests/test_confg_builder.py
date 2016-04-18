@@ -8,7 +8,7 @@ def cfgtool(configtool_file):
 
 
 def test_load_inventory(cfgtool):
-    loaded = cfgtool.inventory
+    loaded = cfgtool.inventory()
     assert loaded == {
         'inventory': {
             'inventory': {'mysql': 1.0},
@@ -24,5 +24,5 @@ def test_load_inventory(cfgtool):
     }
 
 def test_load_inventory_default_inventory(cfgtool):
-    loaded = cfgtool.inventory
+    loaded = cfgtool.inventory()
     assert loaded['dev']['inventory'] == {}  # default inventory is empty dict
