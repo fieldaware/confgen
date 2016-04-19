@@ -1,14 +1,14 @@
 import pytest
 import conftest
-from confgen.cli import ConfigTool
+from confgen.cli import Inventory
 
 @pytest.fixture
-def cfgtool(configtool_file):
-    return ConfigTool(home=conftest.simplerepo('.'), config=configtool_file)
+def inventory():
+    return Inventory(home=conftest.simplerepo('.'))
 
 
-def test_load_inventory(cfgtool):
-    loaded = cfgtool.inventory()
+def test_load_inventory(inventory):
+    loaded = inventory.collect()
     assert loaded == {
         '__kvs__': {'mysql': 1.0, 'secret': 'password'},
         'dev': {
@@ -21,13 +21,13 @@ def test_load_inventory(cfgtool):
         'test': {'__kvs__': {'secret': 'plaintext'}}
     }
 
-def test_load_inventory_default_inventory(cfgtool):
-    loaded = cfgtool.inventory()
+def test_load_inventory_default_inventory(inventory):
+    loaded = inventory.collect()
     assert loaded['dev']['inventory'] == {}  # default inventory is empty dict
 
 
-def test_build_inventory(cfgtool):
-    build = cfgtool.build()
+def test_build_inventory(inventory):
+    build = inventory.build()
 
     assert build == {
         '__kvs__': {'mysql': 1.0, 'secret': 'password'},

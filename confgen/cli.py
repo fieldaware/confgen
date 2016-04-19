@@ -3,26 +3,27 @@ import yaml
 import os
 from collections import defaultdict
 
+
 class ConfGenError(Exception):
     pass
+
 
 def Tree():
     return defaultdict(Tree)
 
-class ConfigTool(object):
-    key_value_tag = "__kvs__"
-    def __init__(self, home=None, config=None):
-        self.home = home
-        self.config = yaml.load(open(config))
-        self.configdata_dir = os.path.join(home, 'configdata')
 
-    def inventory(self):
+class Inventory(object):
+    key_value_tag = "__kvs__"
+    def __init__(self, home=None):
+        self.home = home
+        self.inventory_dir = os.path.join(home, 'inventory')
+
+    def collect(self):
         '''
         walks to home dir and collects yaml files
         '''
-        rootdir = os.path.join(self.home, 'inventory')
         inventory = Tree()
-        rootdir = rootdir.rstrip(os.sep)
+        rootdir = self.inventory_dir.rstrip(os.sep)
         start = rootdir.rfind(os.sep) + 1
         for path, dirs, files in os.walk(rootdir):  # os.walk you tried to be fun, you are not
             folders = path[start:].split(os.sep)
@@ -36,11 +37,11 @@ class ConfigTool(object):
                 parent[folders[-1]] = Tree()
         return inventory['inventory']
 
-    def build(self, inventory=None):
+    def build(self):
         '''
         builds the structure based on loaded files
         '''
-        inventory = self.inventory()
+        inventory = self.collect()
 
         def _build(current_lvl, kvs):
             '''
@@ -48,6 +49,7 @@ class ConfigTool(object):
             '''
             if not any([isinstance(v, dict) for v in current_lvl.values()]):
                 return
+
             current_kvs = current_lvl.pop(self.key_value_tag, {})
             kvs_copy = kvs.copy()
             kvs_copy.update(current_kvs)
@@ -59,10 +61,14 @@ class ConfigTool(object):
         _build(inventory, {})
         return inventory
 
-    def render(self, build=None):
-        build = build or self.build()
-        pass
 
+class Renderer(object):
+    def __int__(self, inventory, home):
+        self.inventory = inventory
+        self.templates_dir = os.path.join(home, 'templates')
+
+    def render(self):
+        pass
 
     def flush(self):
         '''
