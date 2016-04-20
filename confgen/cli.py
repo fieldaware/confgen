@@ -1,6 +1,8 @@
 import click
 import yaml
+from jinja2 import Template, Environment, FileSystemLoader
 import os
+from os.path import join, isfile
 from collections import defaultdict
 
 
@@ -14,6 +16,7 @@ def Tree():
 
 class Inventory(object):
     key_value_tag = "__kvs__"
+
     def __init__(self, home=None):
         self.home = home
         self.inventory_dir = os.path.join(home, 'inventory')
@@ -63,30 +66,44 @@ class Inventory(object):
 
 
 class Renderer(object):
-    def __int__(self, inventory, home):
-        self.inventory = inventory
-        self.templates_dir = os.path.join(home, 'templates')
+    templates_dir = 'templates'
 
-    def render(self):
-        pass
+    def __init__(self, services, home):
+        self.home = home
+        self.jinja_environ = Environment(loader=FileSystemLoader(os.path.join(home, self.templates_dir)))
+        self.templates = self.collect_templates(services)
 
-    def flush(self):
-        '''
-        flushes builded structure to a disk
-        '''
-        pass
+    def collect_templates(self, services):
+        templates = {}
+        for service in services:
+            service_template_dir = join(self.home, self.templates_dir, service)
+            templates[service] = [join(service, f) for f in os.listdir(service_template_dir) if isfile(join(service_template_dir, f))]
+        return templates
+
+    def render_templates(self, service, template_inventory):
+        renders = {}
+        for template in self.templates[service]:
+            renders[template] = self.jinja_environ.get_template(template).render(template_inventory)
+        return renders
+
+class ConfGen(object):
+    def __init__(self, home, config):
+        self.home = home
+        self.config = yaml.load(open(config))
+        self.inventory = Inventory(home)
+        self.renderer = Renderer(self.inventory, config, home)
 
 
 @click.group()
 @click.option('--ct-home', envvar='CG_HOME', default='.',
               type=click.Path(exists=True, file_okay=False, resolve_path=True),
               help='The config home - typically your config git repo')
-@click.option('--config', default='configtool.yaml', envvar='CG_CONFIG',
+@click.option('--config', default='confgen.yaml', envvar='CG_CONFIG',
               help='Defaults to configtool.yaml in current directory',
               type=click.File('r'))
 @click.pass_context
 def cli(ctx, ct_home, config):
-    ctx.obj = ConfigTool(ct_home, config)
+    ctx.obj = ConfGen(ct_home, config)
 
 @cli.group()
 def search():

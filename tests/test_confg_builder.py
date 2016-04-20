@@ -1,12 +1,3 @@
-import pytest
-import conftest
-from confgen.cli import Inventory
-
-@pytest.fixture
-def inventory():
-    return Inventory(home=conftest.simplerepo('.'))
-
-
 def test_load_inventory(inventory):
     loaded = inventory.collect()
     assert loaded == {

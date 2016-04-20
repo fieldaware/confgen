@@ -1,6 +1,9 @@
+import yaml
 import os
 from click.testing import CliRunner
 import pytest
+import conftest
+from confgen.cli import Inventory, Renderer
 
 pwd = os.path.dirname(os.path.abspath(__file__))
 
@@ -8,10 +11,18 @@ simplerepo = lambda x: os.path.join(os.path.join(pwd, 'simplerepo'), x)
 
 
 @pytest.fixture
-def configtool_file(request):
-    return simplerepo('configtool.yaml')
+def confgenyaml(request):
+    return yaml.load(open(simplerepo('confgen.yaml')))
 
 @pytest.fixture
-def runner(configtool_file):
+def runner(confgenyaml):
     runner = CliRunner()
     return runner
+
+@pytest.fixture
+def inventory():
+    return Inventory(home=conftest.simplerepo('.'))
+
+@pytest.fixture
+def renderer(confgenyaml, inventory):
+    return Renderer(confgenyaml['service'], home=simplerepo('.'))

@@ -1,0 +1,12 @@
+service: &services
+  - webapp
+  - api
+
+levels:
+  prod:
+    main:
+      webapp1:
+        - webapp
+  dev:
+    qa1: *services
+  test: *services
