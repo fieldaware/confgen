@@ -118,7 +118,9 @@ class ConfGen(object):
         config_with_inventory = self.merge_config_with_inventory()
         config_with_redered_templates = {}
         for path, service in flatten_dict(self.config['infra']).iteritems():
-            config_with_redered_templates[path] = self.renderer.render_multiple_templates(service, config_with_inventory[path])
+            rendered_templates = self.renderer.render_multiple_templates(service, config_with_inventory[path])
+            for template_path, config in rendered_templates.iteritems():
+                config_with_redered_templates['{}/{}'.format(path, template_path)] = config
         return config_with_redered_templates
 
 
