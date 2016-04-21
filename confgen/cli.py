@@ -1,21 +1,30 @@
 import click
 import yaml
-from jinja2 import Template, Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 import os
 from os.path import join, isfile
-from collections import defaultdict
+import logging
+import collections
 
+logging.getLogger('confgen').addHandler(logging.StreamHandler())
+log = logging.getLogger('confgen')
 
 class ConfGenError(Exception):
     pass
 
 
-def Tree():
-    return defaultdict(Tree)
-
+def flatten_dict(d, parent_key='', sep='/'):
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else sep + k
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
 
 class Inventory(object):
-    key_value_tag = "__kvs__"
+    inventory_delimiter = '/'
 
     def __init__(self, home=None):
         self.home = home
@@ -25,44 +34,29 @@ class Inventory(object):
         '''
         walks to home dir and collects yaml files
         '''
-        inventory = Tree()
-        rootdir = self.inventory_dir.rstrip(os.sep)
-        start = rootdir.rfind(os.sep) + 1
-        for path, dirs, files in os.walk(rootdir):  # os.walk you tried to be fun, you are not
-            folders = path[start:].split(os.sep)
-            parent = reduce(dict.get, folders[:-1], inventory)
+        inventory = {}
+        for path, dirs, files in os.walk(self.inventory_dir):
             if files:
                 configyml = yaml.load(open(os.path.join(path, 'config.yaml')))
-                node = Tree()
-                node.update({self.key_value_tag: configyml})
-                parent[folders[-1]] = node
-            else:
-                parent[folders[-1]] = Tree()
-        return inventory['inventory']
+                inventory['/' + path[len(self.inventory_dir) + 1:]] = configyml
+        return inventory
 
     def build(self):
         '''
-        builds the structure based on loaded files
+        builds flat dict structure based on loaded files
         '''
         inventory = self.collect()
+        public_inventory = {}
 
-        def _build(current_lvl, kvs):
-            '''
-            Recursively update each node
-            '''
-            if not any([isinstance(v, dict) for v in current_lvl.values()]):
-                return
-
-            current_kvs = current_lvl.pop(self.key_value_tag, {})
-            kvs_copy = kvs.copy()
-            kvs_copy.update(current_kvs)
-            current_lvl[self.key_value_tag] = kvs_copy
-
-            for k in current_lvl.keys():
-                _build(current_lvl[k], kvs_copy)
-
-        _build(inventory, {})
-        return inventory
+        for path in sorted(inventory.keys()):
+            list_path = path.strip('/').split('/')
+            kv_set = inventory.get('/').copy()
+            for i in xrange(len(list_path)):
+                update_with_path = '/' + '/'.join(list_path[:i + 1])
+                update_with = inventory.get(update_with_path, {})
+                kv_set.update(update_with)
+            public_inventory[path] = kv_set
+        return public_inventory
 
 
 class Renderer(object):
@@ -80,6 +74,12 @@ class Renderer(object):
             templates[service] = [join(service, f) for f in os.listdir(service_template_dir) if isfile(join(service_template_dir, f))]
         return templates
 
+    def render_multiple_templates(self, services, template_inventory):
+        renders = {}
+        for service in services:
+            renders.update(self.render_templates(service, template_inventory))
+        return renders
+
     def render_templates(self, service, template_inventory):
         renders = {}
         for template in self.templates[service]:
@@ -91,7 +91,35 @@ class ConfGen(object):
         self.home = home
         self.config = yaml.load(open(config))
         self.inventory = Inventory(home)
-        self.renderer = Renderer(self.inventory, config, home)
+        self.renderer = Renderer(self.config['service'], home)
+
+    def merge_config_with_inventory(self):
+        public_inventory = self.inventory.build()
+        flatten_config = flatten_dict(self.config['infra'])
+
+        built_config = {}
+        for path, _ in flatten_config.iteritems():
+            # not pythonic yet, but feel free to do it better
+            i = 0
+            collected = {}
+            while not collected.get(path):
+                path_to_get = path.rsplit('/', i)[0]
+                if not path_to_get:
+                    path_to_get = '/'
+                inventory_for_path = public_inventory.get(path_to_get)
+                if inventory_for_path:
+                    collected[path] = inventory_for_path
+                else:
+                    i += 1
+            built_config[path] = collected[path]
+        return built_config
+
+    def build(self):
+        config_with_inventory = self.merge_config_with_inventory()
+        config_with_redered_templates = {}
+        for path, service in flatten_dict(self.config['infra']).iteritems():
+            config_with_redered_templates[path] = self.renderer.render_multiple_templates(service, config_with_inventory[path])
+        return config_with_redered_templates
 
 
 @click.group()

@@ -3,7 +3,7 @@ import os
 from click.testing import CliRunner
 import pytest
 import conftest
-from confgen.cli import Inventory, Renderer
+from confgen.cli import Inventory, Renderer, ConfGen
 
 pwd = os.path.dirname(os.path.abspath(__file__))
 
@@ -26,3 +26,7 @@ def inventory():
 @pytest.fixture
 def renderer(confgenyaml, inventory):
     return Renderer(confgenyaml['service'], home=simplerepo('.'))
+
+@pytest.fixture
+def confgen(request):
+    return ConfGen(home=conftest.simplerepo('.'), config=simplerepo('confgen.yaml'))

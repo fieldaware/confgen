@@ -2,11 +2,18 @@ service: &services
   - webapp
   - api
 
-levels:
+infra:
   prod:
     main:
       webapp1:
         - webapp
+      api1:
+        - api
+      multiapp: *services
+    staging: *services
+
   dev:
     qa1: *services
   test: *services
+  demo:
+    - webapp
