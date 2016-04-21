@@ -87,6 +87,8 @@ class Renderer(object):
         return renders
 
 class ConfGen(object):
+    build_dir = 'build'
+
     def __init__(self, home, config):
         self.home = home
         self.config = yaml.load(open(config))
@@ -114,7 +116,7 @@ class ConfGen(object):
             built_config[path] = collected[path]
         return built_config
 
-    def build(self):
+    def collect(self):
         config_with_inventory = self.merge_config_with_inventory()
         config_with_redered_templates = {}
         for path, service in flatten_dict(self.config['infra']).iteritems():
@@ -122,6 +124,16 @@ class ConfGen(object):
             for template_path, config in rendered_templates.iteritems():
                 config_with_redered_templates['{}/{}'.format(path, template_path)] = config
         return config_with_redered_templates
+
+    def flush(self, collected):
+        land_dir = os.path.join(self.home, self.build_dir)
+        for path, contents in collected.iteritems():
+            path = path.strip('/')
+            if not os.path.exists(os.path.join(land_dir, os.path.dirname(path))):
+                os.makedirs(os.path.join(land_dir, os.path.dirname(path)))
+            with open(os.path.join(land_dir, path), 'w+') as f:
+                f.write(contents)
+
 
 
 @click.group()
