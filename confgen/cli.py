@@ -51,7 +51,7 @@ class Inventory(object):
         for path in sorted(inventory.keys()):
             list_path = path.strip('/').split('/')
             kv_set = inventory.get('/').copy()
-            for i in xrange(len(list_path)):
+            for i in range(len(list_path)):
                 update_with_path = '/' + '/'.join(list_path[:i + 1])
                 update_with = inventory.get(update_with_path, {})
                 kv_set.update(update_with)
@@ -100,7 +100,7 @@ class ConfGen(object):
         flatten_config = flatten_dict(self.config['infra'])
 
         built_config = {}
-        for path, _ in flatten_config.iteritems():
+        for path, _ in flatten_config.items():
             # not pythonic yet, but feel free to do it better
             i = 0
             collected = {}
@@ -119,15 +119,15 @@ class ConfGen(object):
     def collect(self):
         config_with_inventory = self.merge_config_with_inventory()
         config_with_redered_templates = {}
-        for path, service in flatten_dict(self.config['infra']).iteritems():
+        for path, service in flatten_dict(self.config['infra']).items():
             rendered_templates = self.renderer.render_multiple_templates(service, config_with_inventory[path])
-            for template_path, config in rendered_templates.iteritems():
+            for template_path, config in rendered_templates.items():
                 config_with_redered_templates['{}/{}'.format(path, template_path)] = config
         return config_with_redered_templates
 
     def flush(self, collected):
         land_dir = join(self.home, self.build_dir)
-        for path, contents in collected.iteritems():
+        for path, contents in collected.items():
             path = path.strip('/')
             if not os.path.exists(join(land_dir, os.path.dirname(path))):
                 os.makedirs(join(land_dir, os.path.dirname(path)))
