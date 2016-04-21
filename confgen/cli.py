@@ -28,7 +28,7 @@ class Inventory(object):
 
     def __init__(self, home=None):
         self.home = home
-        self.inventory_dir = os.path.join(home, 'inventory')
+        self.inventory_dir = join(home, 'inventory')
 
     def collect(self):
         '''
@@ -37,7 +37,7 @@ class Inventory(object):
         inventory = {}
         for path, dirs, files in os.walk(self.inventory_dir):
             if files:
-                configyml = yaml.load(open(os.path.join(path, 'config.yaml')))
+                configyml = yaml.load(open(join(path, 'config.yaml')))
                 inventory['/' + path[len(self.inventory_dir) + 1:]] = configyml
         return inventory
 
@@ -64,7 +64,7 @@ class Renderer(object):
 
     def __init__(self, services, home):
         self.home = home
-        self.jinja_environ = Environment(loader=FileSystemLoader(os.path.join(home, self.templates_dir)))
+        self.jinja_environ = Environment(loader=FileSystemLoader(join(home, self.templates_dir)))
         self.templates = self.collect_templates(services)
 
     def collect_templates(self, services):
@@ -126,12 +126,12 @@ class ConfGen(object):
         return config_with_redered_templates
 
     def flush(self, collected):
-        land_dir = os.path.join(self.home, self.build_dir)
+        land_dir = join(self.home, self.build_dir)
         for path, contents in collected.iteritems():
             path = path.strip('/')
-            if not os.path.exists(os.path.join(land_dir, os.path.dirname(path))):
-                os.makedirs(os.path.join(land_dir, os.path.dirname(path)))
-            with open(os.path.join(land_dir, path), 'w+') as f:
+            if not os.path.exists(join(land_dir, os.path.dirname(path))):
+                os.makedirs(join(land_dir, os.path.dirname(path)))
+            with open(join(land_dir, path), 'w+') as f:
                 f.write(contents)
 
     def build(self):
