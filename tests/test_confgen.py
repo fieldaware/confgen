@@ -83,3 +83,38 @@ def test_flush_multiple_files(confgen):
     assert open(j('prod/staging/api/my.cnf')).read() == "FILE_CONTENTS"
     assert open(j('test/webapp/my.cnf')).read() == "FILE_CONTENTS"
     assert open(j('test/webapp/production.ini')).read() == "FILE_CONTENTS"
+
+
+def test_build(confgen):
+    rootdir = tempfile.mkdtemp()
+    confgen.home = rootdir
+
+    confgen.build()
+
+    build_files = {}
+    for path, _, files in os.walk(os.path.join(confgen.home, confgen.build_dir)):
+        if files:
+            for f in files:
+                f_path = os.path.join(path, f)
+                build_files[f_path] = open(f_path).read()
+
+    j = lambda x: os.path.join(rootdir, confgen.build_dir, x.strip('/'))
+    assert build_files == {
+        j('/dev/qa1/webapp/my.cnf'): u'connurl = 4.0:password',
+        j('/dev/qa1/webapp/production.ini'): u'mysql = 4.0\npassword = password',
+        j('/dev/qa1/api/my.cnf'): u'connurl = 4.0:password',
+        j('/prod/main/api1/api/my.cnf'): u'connurl = 3.0:password',
+        j('/prod/main/multiapp/webapp/my.cnf'): u'connurl = 3.0:password',
+        j('/prod/main/multiapp/webapp/production.ini'): u'mysql = 3.0\npassword = password',
+        j('/prod/main/multiapp/api/my.cnf'): u'connurl = 3.0:password',
+        j('/prod/main/webapp1/webapp/my.cnf'): u'connurl = 3.0:password',
+        j('/prod/main/webapp1/webapp/production.ini'): u'mysql = 3.0\npassword = password',
+        j('/prod/staging/webapp/my.cnf'): u'connurl = 2.0:password',
+        j('/prod/staging/webapp/production.ini'): u'mysql = 2.0\npassword = password',
+        j('/prod/staging/api/my.cnf'): u'connurl = 2.0:password',
+        j('/test/webapp/my.cnf'): u'connurl = 1.0:plaintext',
+        j('/test/webapp/production.ini'): u'mysql = 1.0\npassword = plaintext',
+        j('/test/api/my.cnf'): u'connurl = 1.0:plaintext',
+        j('/demo/webapp/my.cnf'): u'connurl = 1.0:password',
+        j('/demo/webapp/production.ini'): u'mysql = 1.0\npassword = password',
+    }

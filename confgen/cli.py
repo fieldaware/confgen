@@ -134,7 +134,8 @@ class ConfGen(object):
             with open(os.path.join(land_dir, path), 'w+') as f:
                 f.write(contents)
 
-
+    def build(self):
+        self.flush(self.collect())
 
 @click.group()
 @click.option('--ct-home', envvar='CG_HOME', default='.',
