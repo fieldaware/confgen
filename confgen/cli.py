@@ -63,7 +63,8 @@ class Inventory(object):
         for path, contents in inventory.items():
             dst_dir = join(self.inventory_dir, path.strip('/'))
             mkdir_p(dst_dir)
-            yaml.dump(contents, open(join(dst_dir, self.config_filename), 'w+'))
+            with open(join(dst_dir, self.config_filename), 'w+') as f:
+                yaml.dump(contents, f, default_flow_style=False)
 
     def build(self):
         '''
