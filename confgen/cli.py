@@ -1,3 +1,4 @@
+import errno
 import click
 import yaml
 from jinja2 import Environment, FileSystemLoader
@@ -23,8 +24,18 @@ def flatten_dict(d, parent_key='', sep='/'):
             items.append((new_key, v))
     return dict(items)
 
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
 class Inventory(object):
     inventory_delimiter = '/'
+    config_filename = 'config.yaml'
 
     def __init__(self, home=None):
         self.home = home
@@ -37,9 +48,23 @@ class Inventory(object):
         inventory = {}
         for path, dirs, files in os.walk(self.inventory_dir):
             if files:
-                configyml = yaml.load(open(join(path, 'config.yaml')))
+                configyml = yaml.load(open(join(path, self.config_filename)))
                 inventory['/' + path[len(self.inventory_dir) + 1:]] = configyml
         return inventory
+
+    def set(self, path, key, value):
+        collected = self.collect()
+        if path not in collected:
+            collected[path] = {}
+        collected[path][key] = value
+        self.flush(collected)
+
+    def flush(self, inventory):
+        for path, contents in inventory.items():
+            dst_dir = join(self.inventory_dir, path.strip('/'))
+            mkdir_p(dst_dir)
+            with open(join(dst_dir, self.config_filename), 'w+') as f:
+                yaml.dump(contents, f, default_flow_style=False)
 
     def build(self):
         '''
@@ -137,6 +162,9 @@ class ConfGen(object):
     def build(self):
         self.flush(self.collect())
 
+    def set(self, path, key, value):
+        self.inventory.set(path, key, value)
+
 @click.group()
 @click.option('--ct-home', envvar='CG_HOME', default='.',
               type=click.Path(exists=True, file_okay=False, resolve_path=True),
@@ -172,8 +200,10 @@ def build(ctx):
 @click.argument('path')
 @click.argument('key')
 @click.argument('value')
-def set(path, key, value):
-    click.echo("will set the value: {}, at key: {} and path:{}".format(value, key, path))
+@click.pass_obj
+def set(ctx, path, key, value):
+    ctx.set(path, key, value)
+
 
 @cli.command()
 @click.argument('path')

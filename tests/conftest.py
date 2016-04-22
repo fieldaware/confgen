@@ -1,3 +1,5 @@
+import shutil
+import tempfile
 import yaml
 import os
 from click.testing import CliRunner
@@ -6,12 +8,16 @@ from confgen.cli import Inventory, Renderer, ConfGen
 
 pwd = os.path.dirname(os.path.abspath(__file__))
 
-simplerepo = lambda x: os.path.join(os.path.join(pwd, 'simplerepo'), x)
-
+@pytest.fixture
+def simplerepo(request):
+    rootdir = tempfile.mkdtemp()
+    simplerepo_dst = os.path.join(rootdir, 'simplerepo')
+    shutil.copytree(os.path.join(pwd, 'simplerepo'), simplerepo_dst)
+    return simplerepo_dst
 
 @pytest.fixture
-def confgenyaml(request):
-    return yaml.load(open(simplerepo('confgen.yaml')))
+def confgenyaml(simplerepo, request):
+    return yaml.load(open(os.path.join(simplerepo, 'confgen.yaml')))
 
 @pytest.fixture
 def runner(confgenyaml):
@@ -19,13 +25,13 @@ def runner(confgenyaml):
     return runner
 
 @pytest.fixture
-def inventory():
-    return Inventory(home=simplerepo('.'))
+def inventory(simplerepo):
+    return Inventory(home=simplerepo)
 
 @pytest.fixture
-def renderer(confgenyaml, inventory):
-    return Renderer(confgenyaml['service'], home=simplerepo('.'))
+def renderer(confgenyaml, inventory, simplerepo):
+    return Renderer(confgenyaml['service'], home=simplerepo)
 
 @pytest.fixture
-def confgen(request):
-    return ConfGen(home=simplerepo('.'), config=open(simplerepo('confgen.yaml')))
+def confgen(request, simplerepo):
+    return ConfGen(home=simplerepo, config=open(os.path.join(simplerepo, 'confgen.yaml')))
