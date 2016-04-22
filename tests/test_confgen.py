@@ -3,15 +3,52 @@ import tempfile
 
 def test_merge_config_with_inventory(confgen):
     built_config = confgen.merge_config_with_inventory()
+
     assert built_config == {
-        '/dev/qa1': {'mysql': 4.0, 'secret': 'password'},
-        '/prod/main/api1': {'mysql': 3.0, 'secret': 'password'},
-        '/prod/main/multiapp': {'mysql': 3.0, 'secret': 'password'},
-        '/prod/main/webapp1': {'mysql': 3.0, 'secret': 'password'},
-        '/prod/staging': {'mysql': 2.0, 'secret': 'password'},
-        '/test': {'mysql': 1.0, 'secret': 'plaintext'},
-        '/demo': {'mysql': 1.0, 'secret': 'password'},
+        '/demo': {
+            'mysql': 1.0,
+            'mysql__source': 'mysql:/',
+            'secret': 'password',
+            'secret__source': 'secret:/',
+        },
+        '/dev/qa1': {
+            'mysql': 4.0,
+            'mysql__source': 'mysql:/ override:/dev/qa1',
+            'secret': 'password',
+            'secret__source': 'secret:/',
+        },
+        '/prod/main/api1': {
+            'mysql': 3.0,
+            'mysql__source': 'mysql:/ override:/prod,/prod/main',
+            'secret': 'password',
+            'secret__source': 'secret:/',
+        },
+        '/prod/main/multiapp': {
+            'mysql': 3.0,
+            'mysql__source': 'mysql:/ override:/prod,/prod/main',
+            'secret': 'password',
+            'secret__source': 'secret:/',
+        },
+        '/prod/main/webapp1': {
+            'mysql': 3.0,
+            'mysql__source': 'mysql:/ override:/prod,/prod/main',
+            'secret': 'password',
+            'secret__source': 'secret:/',
+        },
+        '/prod/staging': {
+            'mysql': 2.0,
+            'mysql__source': 'mysql:/ override:/prod',
+            'secret': 'password',
+            'secret__source': 'secret:/',
+        },
+        '/test': {
+            'mysql': 1.0,
+            'mysql__source': 'mysql:/',
+            'secret': 'plaintext',
+            'secret__source': 'secret:/ override:/test',
+        }
     }
+
 
 def test_collecting_inventory_plus_temaples(confgen):
     assert confgen.collect() == {
