@@ -1,14 +1,16 @@
+import copy
+collected_inventory = {
+    '/': {'mysql': 1.0, 'secret': 'password'},
+    '/dev/qa1': {'mysql': 4.0},
+    '/dev/qa2': {'mysql': 9.0},
+    '/prod': {'mysql': 2.0},
+    '/prod/main': {'mysql': 3.0},
+    '/test': {'secret': 'plaintext'},
+}
+
 def test_load_inventory(inventory):
     loaded = inventory.collect()
-    assert loaded == {
-        '/': {'mysql': 1.0, 'secret': 'password'},
-        '/dev/qa1': {'mysql': 4.0},
-        '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value'},
-        '/prod': {'mysql': 2.0},
-        '/prod/main': {'mysql': 3.0},
-        '/test': {'secret': 'plaintext'},
-    }
-
+    assert loaded == collected_inventory
 
 def test_build_inventory(inventory):
     public_inventory = inventory.build()
@@ -57,24 +59,44 @@ def test_build_inventory(inventory):
 def test_set_new_value_existing_path(inventory):
     inventory.set('/', 'foo', 'bar')
     loaded = inventory.collect()
-    assert loaded == {
-        '/': {'mysql': 1.0, 'secret': 'password', 'foo': 'bar'},
-        '/dev/qa1': {'mysql': 4.0},
-        '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value'},
-        '/prod': {'mysql': 2.0},
-        '/prod/main': {'mysql': 3.0},
-        '/test': {'secret': 'plaintext'},
-    }
+
+    expected = copy.deepcopy(collected_inventory)
+    expected['/']['foo'] = 'bar'
+    assert loaded == expected
 
 def test_set_set_value_new_path(inventory):
     inventory.set('/staging/demo1', 'foo', 'bar')
     loaded = inventory.collect()
-    assert loaded == {
-        '/': {'mysql': 1.0, 'secret': 'password'},
-        '/dev/qa1': {'mysql': 4.0},
-        '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value'},
-        '/prod': {'mysql': 2.0},
-        '/prod/main': {'mysql': 3.0},
-        '/test': {'secret': 'plaintext'},
-        '/staging/demo1': {'foo': 'bar'},
-    }
+
+    expected = copy.deepcopy(collected_inventory)
+    expected['/staging/demo1'] = {'foo': 'bar'}
+    assert loaded == expected
+
+def test_delete_existing_key(inventory):
+    inventory.delete('/', 'secret')
+
+    loaded = inventory.collect()
+    expected = copy.deepcopy(collected_inventory)
+    expected['/'].pop('secret')
+    assert loaded == expected
+
+def test_delete_last_remaining_key(inventory):
+    inventory.delete('/dev/qa1', 'mysql')
+
+    loaded = inventory.collect()
+    expected = copy.deepcopy(collected_inventory)
+    expected['/dev/qa1'] = {}
+    assert loaded == expected
+
+def test_delete_non_existing_path(inventory):
+    inventory.delete('/dev/qa3', 'mysql')
+
+    loaded = inventory.collect()
+    assert loaded == collected_inventory
+
+
+def test_delete_non_existing_key(inventory):
+    inventory.delete('/dev/qa2', 'psql')
+
+    loaded = inventory.collect()
+    assert loaded == collected_inventory
