@@ -36,6 +36,7 @@ def mkdir_p(path):
 class Inventory(object):
     inventory_delimiter = '/'
     config_filename = 'config.yaml'
+    source_key_pattern = '{key}__source'
 
     def __init__(self, home=None):
         self.home = home
@@ -74,12 +75,21 @@ class Inventory(object):
         public_inventory = {}
 
         for path in sorted(inventory.keys()):
-            list_path = path.strip('/').split('/')
-            kv_set = inventory.get('/').copy()
-            for i in range(len(list_path)):
-                update_with_path = '/' + '/'.join(list_path[:i + 1])
+            list_path = ['/'] if path == '/' else ['/'] + path.split('/')[1:]
+            kv_set = {}
+            sources = {}
+            for i, _ in enumerate(list_path, start=1):
+                update_with_path = '/{}'.format('/'.join(list_path[1:i]))
                 update_with = inventory.get(update_with_path, {})
+                for k in update_with:
+                    sources.setdefault(k, []).append(update_with_path)
                 kv_set.update(update_with)
+            prefixed_source_vars = {
+                Inventory.source_key_pattern.format(key=k):
+                    '{key}:{path}'.format(key=k, path=v[0]) + (' override:{paths}'.format(paths=','.join(v[1:])) if v[1:] else '')
+                for k, v in sources.items()
+            }
+            kv_set.update(prefixed_source_vars)
             public_inventory[path] = kv_set
         return public_inventory
 
