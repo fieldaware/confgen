@@ -60,6 +60,14 @@ class Inventory(object):
         collected[path][key] = value
         self.flush(collected)
 
+    def delete(self, path, key):
+        collected = self.collect()
+        if path not in collected:
+            return
+        if key in collected[path]:
+            collected[path].pop(key)
+        self.flush(collected)
+
     def flush(self, inventory):
         for path, contents in inventory.items():
             dst_dir = join(self.inventory_dir, path.strip('/'))
@@ -175,6 +183,9 @@ class ConfGen(object):
     def set(self, path, key, value):
         self.inventory.set(path, key, value)
 
+    def delete(self, path, key):
+        self.inventory.delete(path, key)
+
 @click.group()
 @click.option('--ct-home', envvar='CG_HOME', default='.',
               type=click.Path(exists=True, file_okay=False, resolve_path=True),
@@ -218,8 +229,9 @@ def set(ctx, path, key, value):
 @cli.command()
 @click.argument('path')
 @click.argument('key')
-def delete(path, key):
-    click.echo("will delete the key: {} at path: {}".format(path, key))
+@click.pass_obj
+def delete(ctx, path, key):
+    ctx.delete(path, key)
 
 @cli.command()
 def lint():
