@@ -3,7 +3,7 @@ read_file = lambda x: [l.strip() for l in open(x).readlines()]
 
 setup(
     name='confgen',
-    version='0.2.0',
+    version='0.3.0',
     packages=find_packages(),
     scripts=["bin/confgen"],
     install_requires=read_file("requirements.txt"),
