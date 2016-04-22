@@ -91,7 +91,7 @@ class ConfGen(object):
 
     def __init__(self, home, config):
         self.home = home
-        self.config = yaml.load(open(config))
+        self.config = yaml.load(config)
         self.inventory = Inventory(home)
         self.renderer = Renderer(self.config['service'], home)
 
@@ -163,9 +163,10 @@ def value(pattern):
     click.echo("will search value " + pattern)
 
 @cli.command()
-@click.pass_context
+@click.pass_obj
 def build(ctx):
-    click.echo("will build the templates")
+    ctx.build()
+
 
 @cli.command()
 @click.argument('path')

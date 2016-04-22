@@ -28,4 +28,4 @@ def renderer(confgenyaml, inventory):
 
 @pytest.fixture
 def confgen(request):
-    return ConfGen(home=simplerepo('.'), config=simplerepo('confgen.yaml'))
+    return ConfGen(home=simplerepo('.'), config=open(simplerepo('confgen.yaml')))
