@@ -1,0 +1,2 @@
+dburi: mysql://mysql@dev
+dbversion: 5.8
