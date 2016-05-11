@@ -1,3 +1,2 @@
 dburi: mysql://mysql@prod
 dbversion: 5.7
-!!python/unicode 'version': !!python/unicode '1.1'
