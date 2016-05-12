@@ -13,7 +13,7 @@ For example, user wants to install `confgen 0.4.0`:
 
 ### Virtualenv installation:
 ```
-pip install https://github.com/fieldaware/confgen/releases/download/0.4.0/confgen-0.4.0-py2.py3-none-any.whl
+pip install https://github.com/fieldaware/confgen/releases/download/0.4.1/confgen-0.4.1-py2.py3-none-any.whl
 ```
 
 
@@ -22,7 +22,7 @@ pip install https://github.com/fieldaware/confgen/releases/download/0.4.0/confge
 Do the same thing but with sudo
 
 ```
-sudo pip install https://github.com/fieldaware/confgen/releases/download/0.4.0/confgen-0.4.0-py2.py3-none-any.whl
+sudo pip install https://github.com/fieldaware/confgen/releases/download/0.4.1/confgen-0.4.1-py2.py3-none-any.whl
 ```
 
 ### Running
