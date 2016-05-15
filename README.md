@@ -9,7 +9,7 @@ It is highly recommended to use this tool with some configuration management sys
 The list of releases is here: https://github.com/fieldaware/confgen/releases
 Each release contains python wheel which can be installed with pip
 
-For example, user wants to install `confgen 0.4.0`:
+For example, user wants to install `confgen 0.4.1`:
 
 ### Virtualenv installation:
 ```
