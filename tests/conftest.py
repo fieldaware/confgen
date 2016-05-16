@@ -4,7 +4,9 @@ import yaml
 import os
 from click.testing import CliRunner
 import pytest
-from confgen.cli import Inventory, Renderer, ConfGen
+from confgen.inventory import Inventory
+from confgen.view import Renderer
+from confgen.logic import ConfGen
 
 pwd = os.path.dirname(os.path.abspath(__file__))
 
