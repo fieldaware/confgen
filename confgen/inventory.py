@@ -73,15 +73,25 @@ class Inventory(object):
             with open(join(dst_dir, self.config_filename), 'w+') as f:
                 yaml.dump(contents, f, default_flow_style=False)
 
+    def traverse(self, path):
+        '''
+        takses a path and yields all its componenets from top to bottom
+
+        / -> /
+        /prod -> /, /prod
+        /dev/qa1 -> /, /dev, /dev/qa1
+        '''
+        list_path = path.rstrip('/').split('/')
+        for i in range(len(list_path)):
+            yield '/'.join(list_path[:i + 1]) or '/'
+
     def _build_single_row(self, inventory, path):
-        list_path = ['/'] if path == '/' else ['/'] + path.split('/')
         kv_set = {}
         sources = {}
-        for i, _ in enumerate(list_path, start=1):
-            update_with_path = '/{}'.format('/'.join(list_path[1:i]))
-            update_with = inventory.get(update_with_path, {})
+        for path in self.traverse(path):
+            update_with = inventory.get(path, {})
             for k in update_with:
-                sources.setdefault(k, []).append(update_with_path)
+                sources.setdefault(k, []).append(path)
             kv_set.update(update_with)
 
         prefixed_source_vars = {
