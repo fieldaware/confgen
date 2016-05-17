@@ -88,4 +88,4 @@ class Inventory(object):
         builds flat dict structure based on loaded files
         '''
         inventory = self.collect()
-        return {path: self._build_single_row(inventory, path) for path in sorted(inventory.keys())}
+        return {path: self._build_single_row(inventory, path) for path in inventory}
