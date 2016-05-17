@@ -29,7 +29,6 @@ class Inventory(object):
         relative_path = path[len(self.inventory_dir):]  # strip absolute path
         if relative_path == '':  # set root path as '/'
             return '/'
-
         return relative_path
 
     def collect(self):
@@ -44,6 +43,9 @@ class Inventory(object):
         return inventory
 
     def set(self, path, key, value):
+        '''
+        add a value to the inventory and saves results to disk
+        '''
         collected = self.collect()
         if path not in collected:
             collected[path] = {}
@@ -51,6 +53,9 @@ class Inventory(object):
         self._flush(collected)
 
     def delete(self, path, key):
+        '''
+        deletes keys/value pair from the inventory and saves results to disk
+        '''
         collected = self.collect()
         if path not in collected:
             return
@@ -59,6 +64,9 @@ class Inventory(object):
         self._flush(collected)
 
     def _flush(self, inventory):
+        '''
+        saves given inventory to disk
+        '''
         for path, contents in inventory.items():
             dst_dir = join(self.inventory_dir, path.strip('/'))
             mkdir_p(dst_dir)
@@ -66,7 +74,7 @@ class Inventory(object):
                 yaml.dump(contents, f, default_flow_style=False)
 
     def _build_single_row(self, inventory, path):
-        list_path = ['/'] if path == '/' else ['/'] + path.split('/')[1:]
+        list_path = ['/'] if path == '/' else ['/'] + path.split('/')
         kv_set = {}
         sources = {}
         for i, _ in enumerate(list_path, start=1):
@@ -75,6 +83,7 @@ class Inventory(object):
             for k in update_with:
                 sources.setdefault(k, []).append(update_with_path)
             kv_set.update(update_with)
+
         prefixed_source_vars = {
             Inventory.source_key_pattern.format(key=k):
                 '{key}:{path}'.format(key=k, path=v[0]) + (' override:{paths}'.format(paths=','.join(v[1:])) if v[1:] else '')
