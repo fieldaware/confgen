@@ -73,7 +73,14 @@ class Inventory(object):
             with open(join(dst_dir, self.config_filename), 'w+') as f:
                 yaml.dump(contents, f, default_flow_style=False)
 
-    def traverse(self, path):
+    def build(self):
+        '''
+        builds flat dict structure based on loaded files
+        '''
+        inventory = self.collect()
+        return {path: self._build_single_row(inventory, path) for path in inventory}
+
+    def _traverse(self, path):
         '''
         takses a path and yields all its componenets from top to bottom
 
@@ -87,24 +94,22 @@ class Inventory(object):
 
     def _build_single_row(self, inventory, path):
         kv_set = {}
-        sources = {}
-        for path in self.traverse(path):
+        for path in self._traverse(path):
             update_with = inventory.get(path, {})
-            for k in update_with:
-                sources.setdefault(k, []).append(path)
             kv_set.update(update_with)
+
+        kv_set.update(self._track_invetory_source(inventory, path))
+        return kv_set
+
+    def _track_invetory_source(self, inventory, path):
+        sources = {}
+        for path in self._traverse(path):
+            for k in inventory.get(path, {}):
+                sources.setdefault(k, []).append(path)
 
         prefixed_source_vars = {
             Inventory.source_key_pattern.format(key=k):
                 '{key}:{path}'.format(key=k, path=v[0]) + (' override:{paths}'.format(paths=','.join(v[1:])) if v[1:] else '')
             for k, v in sources.items()
         }
-        kv_set.update(prefixed_source_vars)
-        return kv_set
-
-    def build(self):
-        '''
-        builds flat dict structure based on loaded files
-        '''
-        inventory = self.collect()
-        return {path: self._build_single_row(inventory, path) for path in inventory}
+        return prefixed_source_vars
