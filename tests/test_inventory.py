@@ -56,6 +56,12 @@ def test_build_inventory(inventory):
         }
     }
 
+import pytest
+@pytest.mark.skip()
+def test_search_keys(inventory):
+    public_inventory = inventory.build(sources=False)
+    assert public_inventory.search_key('.*prod.*') = ['/prod', '/prod/main']
+
 def test_set_new_value_existing_path(inventory):
     inventory.set('/', 'foo', 'bar')
     loaded = inventory.collect()

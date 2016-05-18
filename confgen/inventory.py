@@ -73,12 +73,12 @@ class Inventory(object):
             with open(join(dst_dir, self.config_filename), 'w+') as f:
                 yaml.dump(contents, f, default_flow_style=False)
 
-    def build(self):
+    def build(self, source=True):
         '''
         builds flat dict structure based on loaded files
         '''
         inventory = self.collect()
-        return {path: self._build_single_row(inventory, path) for path in inventory}
+        return {path: self._build_single_row(inventory, path, source) for path in inventory}
 
     def invetory_for_path(self, inventory, path):
         for path in reversed(list(self.traverse(path))):
@@ -98,13 +98,14 @@ class Inventory(object):
         for i in range(len(list_path)):
             yield '/'.join(list_path[:i + 1]) or '/'
 
-    def _build_single_row(self, inventory, path):
+    def _build_single_row(self, inventory, path, source):
         kv_set = {}
         for path in self.traverse(path):
             update_with = inventory.get(path, {})
             kv_set.update(update_with)
 
-        kv_set.update(self._track_invetory_source(inventory, path))
+        if source:
+            kv_set.update(self._track_invetory_source(inventory, path))
         return kv_set
 
     def _track_invetory_source(self, inventory, path):
