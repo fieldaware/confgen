@@ -29,3 +29,6 @@ class Renderer(object):
         for template in self.templates[service]:
             renders[template] = self.jinja_environ.get_template(template).render(template_inventory)
         return renders
+
+    def render_search_result(result):
+        print result

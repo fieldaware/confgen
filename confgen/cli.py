@@ -26,19 +26,20 @@ def search():
 
 @search.command()
 @click.argument('pattern')
-def key(pattern):
-    click.echo("will search key " + pattern)
+@click.pass_obj
+def key(ctx, pattern):
+    ctx.search_key(pattern)
 
 @search.command()
 @click.argument('pattern')
-def value(pattern):
-    click.echo("will search value " + pattern)
+@click.pass_obj
+def value(ctx, pattern):
+    ctx.search_value(pattern)
 
 @cli.command()
 @click.pass_obj
 def build(ctx):
     ctx.build()
-
 
 @cli.command()
 @click.argument('path')
@@ -47,7 +48,6 @@ def build(ctx):
 @click.pass_obj
 def set(ctx, path, key, value):
     ctx.set(path, key, value)
-
 
 @cli.command()
 @click.argument('path')

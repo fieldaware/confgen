@@ -59,3 +59,9 @@ class ConfGen(object):
 
     def delete(self, path, key):
         self.inventory.delete(path, key)
+
+    def search_key(self, pattern):
+        return self.renderer.render_search_result(self.inventory.search_key(pattern))
+
+    def search_value(self, pattern):
+        return self.renderer.render_search_result(self.inventory.search_value(pattern))

@@ -1,3 +1,4 @@
+import re
 import errno
 import os
 from os.path import join
@@ -73,18 +74,40 @@ class Inventory(object):
             with open(join(dst_dir, self.config_filename), 'w+') as f:
                 yaml.dump(contents, f, default_flow_style=False)
 
-    def build(self, source=True):
+    def build(self, sources=True):
         '''
         builds flat dict structure based on loaded files
         '''
         inventory = self.collect()
-        return {path: self._build_single_row(inventory, path, source) for path in inventory}
+        return {path: self._build_single_row(inventory, path, sources) for path in inventory}
 
     def invetory_for_path(self, inventory, path):
         for path in reversed(list(self.traverse(path))):
             candidate = inventory.get(path)
             if candidate:
                 return candidate
+
+    def search_key(self, pattern):
+        rgx = re.compile(pattern)
+        inventory = self.build(sources=False)
+        return {k: v for k, v in inventory.items() if rgx.search(k)}
+
+    def search_value(self, pattern):
+        rgx = re.compile(pattern)
+        inventory = self.build(sources=False)
+
+        def search():
+            for path, values in inventory.items():
+
+                # look in keys for values
+                if filter(rgx.search, values.keys()):
+                    yield path, values
+
+                # check in inventory values - str is necessary because they might be ints
+                elif filter(rgx.search, [str(i) for i in values.values()]):
+                    yield path, values
+
+        return {k: v for (k, v) in search()}
 
     def traverse(self, path):
         '''
@@ -98,13 +121,13 @@ class Inventory(object):
         for i in range(len(list_path)):
             yield '/'.join(list_path[:i + 1]) or '/'
 
-    def _build_single_row(self, inventory, path, source):
+    def _build_single_row(self, inventory, path, sources):
         kv_set = {}
         for path in self.traverse(path):
             update_with = inventory.get(path, {})
             kv_set.update(update_with)
 
-        if source:
+        if sources:
             kv_set.update(self._track_invetory_source(inventory, path))
         return kv_set
 
