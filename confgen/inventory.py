@@ -80,7 +80,13 @@ class Inventory(object):
         inventory = self.collect()
         return {path: self._build_single_row(inventory, path) for path in inventory}
 
-    def _traverse(self, path):
+    def invetory_for_path(self, inventory, path):
+        for path in reversed(list(self.traverse(path))):
+            candidate = inventory.get(path)
+            if candidate:
+                return candidate
+
+    def traverse(self, path):
         '''
         takses a path and yields all its componenets from top to bottom
 
@@ -94,7 +100,7 @@ class Inventory(object):
 
     def _build_single_row(self, inventory, path):
         kv_set = {}
-        for path in self._traverse(path):
+        for path in self.traverse(path):
             update_with = inventory.get(path, {})
             kv_set.update(update_with)
 
@@ -103,7 +109,7 @@ class Inventory(object):
 
     def _track_invetory_source(self, inventory, path):
         sources = {}
-        for path in self._traverse(path):
+        for path in self.traverse(path):
             for k in inventory.get(path, {}):
                 sources.setdefault(k, []).append(path)
 

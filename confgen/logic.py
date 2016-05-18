@@ -25,31 +25,18 @@ class ConfGen(object):
         self.inventory = inventory.Inventory(home)
         self.renderer = view.Renderer(self.config['service'], home)
 
+    @property
+    def flatten_infra(self):
+        return flatten_dict(self.config['infra'])
+
     def merge_config_with_inventory(self):
         public_inventory = self.inventory.build()
-        flatten_config = flatten_dict(self.config['infra'])
-
-        built_config = {}
-        for path, _ in flatten_config.items():
-            # not pythonic yet, but feel free to do it better
-            i = 0
-            collected = {}
-            while not collected.get(path):
-                path_to_get = path.rsplit('/', i)[0]
-                if not path_to_get:
-                    path_to_get = '/'
-                inventory_for_path = public_inventory.get(path_to_get)
-                if inventory_for_path:
-                    collected[path] = inventory_for_path
-                else:
-                    i += 1
-            built_config[path] = collected[path]
-        return built_config
+        return {path: self.inventory.invetory_for_path(public_inventory, path) for path in self.flatten_infra}
 
     def collect(self):
         config_with_inventory = self.merge_config_with_inventory()
         config_with_redered_templates = {}
-        for path, service in flatten_dict(self.config['infra']).items():
+        for path, service in self.flatten_infra.items():
             rendered_templates = self.renderer.render_multiple_templates(service, config_with_inventory[path])
             for template_path, config in rendered_templates.items():
                 config_with_redered_templates['{}/{}'.format(path, template_path)] = config
@@ -58,9 +45,9 @@ class ConfGen(object):
     def flush(self, collected):
         land_dir = join(self.home, self.build_dir)
         for path, contents in collected.items():
-            path = path.strip('/')
-            if not os.path.exists(join(land_dir, os.path.dirname(path))):
-                os.makedirs(join(land_dir, os.path.dirname(path)))
+            path = path.strip('/')  # remove '/' from the begging
+            # create dirs if they don't exist
+            inventory.mkdir_p(join(land_dir, os.path.dirname(path)))
             with open(join(land_dir, path), 'w+') as f:
                 f.write(contents)
 
