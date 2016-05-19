@@ -1,3 +1,4 @@
+import pytest
 import copy
 collected_inventory = {
     '/': {'mysql': 1.0, 'secret': 'password'},
@@ -55,6 +56,71 @@ def test_build_inventory(inventory):
             'secret__source': 'secret:/ override:/test',
         }
     }
+
+
+@pytest.mark.parametrize('pattern,expected', (
+    (
+        'prod',
+        {
+            '/prod': {
+                'mysql': 2.0, 'secret': 'password'
+            },
+            '/prod/main': {
+                'mysql': 3.0, 'secret': 'password'
+            }
+        }
+    ),
+    (
+        '/.*',
+        {
+            '/': {'mysql': 1.0, 'secret': 'password'},
+            '/dev/qa1': {'mysql': 4.0, 'secret': 'password'},
+            '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value', 'secret': 'password'},
+            '/prod': {'mysql': 2.0, 'secret': 'password'},
+            '/prod/main': {'mysql': 3.0, 'secret': 'password'},
+            '/test': {'mysql': 1.0, 'secret': 'plaintext'}
+        }
+    ),
+    (
+        '/dev/',
+        {
+            '/dev/qa1': {
+                'mysql': 4.0,
+                'secret': 'password',
+            },
+            '/dev/qa2': {
+                'mysql': 9.0,
+                'secret': 'password',
+                'new_key': 'my_value',
+            },
+        }
+    ),
+))
+def test_search_keys(inventory, pattern, expected):
+    assert inventory.search_key(pattern) == expected
+
+
+@pytest.mark.parametrize('pattern,expected', (
+    (
+        'my_value',
+        {'/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value', 'secret': 'password'}}
+    ),
+    (
+        'plaintext',
+        {'/test': {'mysql': 1.0, 'secret': 'plaintext'}}
+    ),
+    (
+        '1.0',
+        {
+            '/': {'mysql': 1.0, 'secret': 'password'},
+            '/test': {'mysql': 1.0, 'secret': 'plaintext'},
+
+        }
+    ),
+))
+def test_search_values(inventory, pattern, expected):
+    assert inventory.search_value(pattern) == expected
+
 
 def test_set_new_value_existing_path(inventory):
     inventory.set('/', 'foo', 'bar')

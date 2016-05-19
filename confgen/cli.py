@@ -6,9 +6,6 @@ from logic import ConfGen
 logging.getLogger('confgen').addHandler(logging.StreamHandler())
 log = logging.getLogger('confgen')
 
-class ConfGenError(Exception):
-    pass
-
 @click.group()
 @click.option('--ct-home', envvar='CG_HOME', default='.',
               type=click.Path(exists=True, file_okay=False, resolve_path=True),
@@ -26,19 +23,20 @@ def search():
 
 @search.command()
 @click.argument('pattern')
-def key(pattern):
-    click.echo("will search key " + pattern)
+@click.pass_obj
+def key(ctx, pattern):
+    print ctx.search_key(pattern)
 
 @search.command()
 @click.argument('pattern')
-def value(pattern):
-    click.echo("will search value " + pattern)
+@click.pass_obj
+def value(ctx, pattern):
+    print ctx.search_value(pattern)
 
 @cli.command()
 @click.pass_obj
 def build(ctx):
     ctx.build()
-
 
 @cli.command()
 @click.argument('path')
@@ -47,7 +45,6 @@ def build(ctx):
 @click.pass_obj
 def set(ctx, path, key, value):
     ctx.set(path, key, value)
-
 
 @cli.command()
 @click.argument('path')
