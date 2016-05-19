@@ -3,6 +3,8 @@ from os.path import join, isfile
 
 from jinja2 import Environment, FileSystemLoader
 
+import tabulate
+
 class Renderer(object):
     templates_dir = 'templates'
 
@@ -30,5 +32,6 @@ class Renderer(object):
             renders[template] = self.jinja_environ.get_template(template).render(template_inventory)
         return renders
 
-    def render_search_result(result):
-        print result
+    def render_search_result(self, result):
+        table = [(k, v) for (k, v) in result.items()]
+        print tabulate.tabulate(table, ['path', 'inventory'], tablefmt='psql')
