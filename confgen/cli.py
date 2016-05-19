@@ -28,13 +28,13 @@ def search():
 @click.argument('pattern')
 @click.pass_obj
 def key(ctx, pattern):
-    ctx.search_key(pattern)
+    print ctx.search_key(pattern)
 
 @search.command()
 @click.argument('pattern')
 @click.pass_obj
 def value(ctx, pattern):
-    ctx.search_value(pattern)
+    print ctx.search_value(pattern)
 
 @cli.command()
 @click.pass_obj
