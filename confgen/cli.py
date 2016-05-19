@@ -6,9 +6,6 @@ from logic import ConfGen
 logging.getLogger('confgen').addHandler(logging.StreamHandler())
 log = logging.getLogger('confgen')
 
-class ConfGenError(Exception):
-    pass
-
 @click.group()
 @click.option('--ct-home', envvar='CG_HOME', default='.',
               type=click.Path(exists=True, file_okay=False, resolve_path=True),
