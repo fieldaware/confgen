@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/fieldaware/confgen.svg?branch=master)](https://travis-ci.org/fieldaware/confgen)
+
+
 # Intro
 
 Configuration generation tool (confgen for short) is designed for operation teams to store and generate configuration files. It often happens that one service is configured differently depending on the environment where it is deployed.
