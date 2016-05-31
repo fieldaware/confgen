@@ -1,3 +1,6 @@
+[![CircleCI](https://circleci.com/gh/fieldaware/confgen.svg?style=svg)](https://circleci.com/gh/fieldaware/confgen)
+
+
 # Intro
 
 Configuration generation tool (confgen for short) is designed for operation teams to store and generate configuration files. It often happens that one service is configured differently depending on the environment where it is deployed.
