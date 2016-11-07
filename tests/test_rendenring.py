@@ -1,5 +1,5 @@
 def test_collect_templates(renderer):
-    assert renderer.templates == {
+    assert renderer.collect_templates(renderer.services) == {
         'api': ['api/my.cnf'],
         'webapp': ['webapp/my.cnf', 'webapp/production.ini']
     }

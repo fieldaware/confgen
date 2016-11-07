@@ -10,8 +10,8 @@ class Renderer(object):
 
     def __init__(self, services, home):
         self.home = home
+        self.services = services
         self.jinja_environ = Environment(loader=FileSystemLoader(join(home, self.templates_dir)))
-        self.templates = self.collect_templates(services)
 
     def collect_templates(self, services):
         templates = {}
@@ -28,7 +28,8 @@ class Renderer(object):
 
     def render_templates(self, service, template_inventory):
         renders = {}
-        for template in self.templates[service]:
+        templates = self.collect_templates(self.services)
+        for template in templates[service]:
             renders[template] = self.jinja_environ.get_template(template).render(template_inventory)
         return renders
 

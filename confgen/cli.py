@@ -2,6 +2,7 @@ import click
 import logging
 
 from logic import ConfGen
+from . import __version__
 
 logging.getLogger('confgen').addHandler(logging.StreamHandler())
 log = logging.getLogger('confgen')
@@ -52,6 +53,10 @@ def set(ctx, path, key, value):
 @click.pass_obj
 def delete(ctx, path, key):
     ctx.delete(path, key)
+
+@cli.command()
+def version():
+    print __version__
 
 @cli.command()
 def lint():
