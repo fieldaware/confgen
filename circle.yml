@@ -4,4 +4,4 @@ machine:
 
 test:
   override:
-    - tox -e py27
+    - tox
