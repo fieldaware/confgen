@@ -5,3 +5,4 @@ confgen.egg-info
 dist/*
 .tox/*
 .cache/*
+.coverage
