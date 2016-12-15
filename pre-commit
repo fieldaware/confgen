@@ -1,0 +1,11 @@
+#!/bin/sh
+
+UNSTAGED=$(confgen build && git status --porcelain build/ | grep -E '\sM|\?\?|\sD')
+if [[ ! -z $UNSTAGED  ]]
+then
+	echo "Confgen build directory in not consistent with the templates and inventory. Please fix."
+	exit 1
+else
+	echo "[OK] Build directory is consistent with templates and inventory"
+	exit 0
+fi
