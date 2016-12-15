@@ -1,3 +1,4 @@
+import shutil
 import os
 from os.path import join
 import yaml
@@ -44,6 +45,8 @@ class ConfGen(object):
 
     def flush(self, collected):
         land_dir = join(self.home, self.build_dir)
+        # remove all files to avoid stale configs (they will re-generated)
+        shutil.rmtree(self.build_dir, ignore_errors=True)
         for path, contents in collected.items():
             path = path.strip('/')  # remove '/' from the begging
             # create dirs if they don't exist
