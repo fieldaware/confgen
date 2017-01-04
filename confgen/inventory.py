@@ -15,6 +15,13 @@ def mkdir_p(path):
             raise
 
 class Inventory(object):
+    '''
+    Represents, builds and saves the invetory.
+
+    It is represented as a directory structure for easy managment.
+    Diffs for single file would be hard to read and maintain, while single files
+    are trivial to manage.
+    '''
     inventory_delimiter = '/'
     config_filename = 'config.yaml'
     source_key_pattern = '{key}__source'
