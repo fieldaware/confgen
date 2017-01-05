@@ -30,7 +30,7 @@ class Renderer(object):
         renders = {}
         templates = self.collect_templates(self.services)
         for template in templates[service]:
-            renders[template] = self.jinja_environ.get_template(template).render(template_inventory)
+            renders[template] = self.jinja_environ.get_template(template).render(template_inventory or {})
         return renders
 
     def render_search_result(self, result):
