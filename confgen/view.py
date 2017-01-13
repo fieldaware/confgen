@@ -34,5 +34,9 @@ class Renderer(object):
         return renders
 
     def render_search_result(self, result):
-        table = [(k, v) for (k, v) in result.items()]
-        return tabulate.tabulate(table, ['path', 'inventory'], tablefmt='psql')
+        table = []
+        for path, inventory in result.items():
+            for ikey, ivalue in inventory.items():
+                table.append((path, ikey, ivalue))
+
+        return tabulate.tabulate(table, ['path', 'key', 'value'], tablefmt='psql')
