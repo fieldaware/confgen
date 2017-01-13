@@ -5,48 +5,72 @@ def test_merge_config_with_inventory(confgen):
     built_config = confgen.merge_config_with_inventory()
 
     assert built_config == {
-        '/demo': {
+        '/demo/webapp': {
             'mysql': 1.0,
             'mysql__source': 'mysql:/',
             'secret': 'password',
             'secret__source': 'secret:/',
         },
-        '/dev/qa1': {
+        '/dev/qa1/webapp': {
             'mysql': 4.0,
             'mysql__source': 'mysql:/ override:/dev/qa1',
             'secret': 'password',
             'secret__source': 'secret:/',
         },
-        '/prod/main/api1': {
+        '/dev/qa1/api': {
+            'mysql': 4.0,
+            'mysql__source': 'mysql:/ override:/dev/qa1',
+            'secret': 'password',
+            'secret__source': 'secret:/',
+        },
+        '/prod/main/api1/api': {
             'mysql': 3.0,
             'mysql__source': 'mysql:/ override:/prod,/prod/main',
             'secret': 'password',
             'secret__source': 'secret:/',
         },
-        '/prod/main/multiapp': {
+        '/prod/main/multiapp/webapp': {
             'mysql': 3.0,
             'mysql__source': 'mysql:/ override:/prod,/prod/main',
             'secret': 'password',
             'secret__source': 'secret:/',
         },
-        '/prod/main/webapp1': {
+        '/prod/main/multiapp/api': {
             'mysql': 3.0,
             'mysql__source': 'mysql:/ override:/prod,/prod/main',
             'secret': 'password',
             'secret__source': 'secret:/',
         },
-        '/prod/staging': {
+        '/prod/main/webapp1/webapp': {
+            'mysql': 3.0,
+            'mysql__source': 'mysql:/ override:/prod,/prod/main',
+            'secret': 'password',
+            'secret__source': 'secret:/',
+        },
+        '/prod/staging/webapp': {
             'mysql': 2.0,
             'mysql__source': 'mysql:/ override:/prod',
             'secret': 'password',
             'secret__source': 'secret:/',
         },
-        '/test': {
+        '/prod/staging/api': {
+            'mysql': 2.0,
+            'mysql__source': 'mysql:/ override:/prod',
+            'secret': 'password',
+            'secret__source': 'secret:/',
+        },
+        '/test/webapp': {
+            'mysql': 10.0,
+            'mysql__source': 'mysql:/ override:/test/webapp',
+            'secret': 'plaintext',
+            'secret__source': 'secret:/ override:/test',
+        },
+        '/test/api': {
             'mysql': 1.0,
             'mysql__source': 'mysql:/',
             'secret': 'plaintext',
             'secret__source': 'secret:/ override:/test',
-        }
+        },
     }
 
 
@@ -67,8 +91,8 @@ def test_collecting_inventory_plus_temaples(confgen):
         '/prod/staging/webapp/my.cnf': u'# mysql:/ override:/prod\n# secret:/\nconnurl = 2.0:password',
         '/prod/staging/webapp/production.ini': u'# mysql:/ override:/prod\nmysql = 2.0\n\n# secret:/\npassword = password',
         '/test/api/my.cnf': u'# mysql:/\n# secret:/ override:/test\nconnurl = 1.0:plaintext',
-        '/test/webapp/my.cnf': u'# mysql:/\n# secret:/ override:/test\nconnurl = 1.0:plaintext',
-        '/test/webapp/production.ini': u'# mysql:/\nmysql = 1.0\n\n# secret:/ override:/test\npassword = plaintext'
+        '/test/webapp/my.cnf': '# mysql:/ override:/test/webapp\n# secret:/ override:/test\nconnurl = 10.0:plaintext',
+        '/test/webapp/production.ini': '# mysql:/ override:/test/webapp\nmysql = 10.0\n\n# secret:/ override:/test\npassword = plaintext',
     }
 
 

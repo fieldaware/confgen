@@ -20,17 +20,12 @@ class Renderer(object):
             templates[service] = [join(service, f) for f in os.listdir(service_template_dir) if isfile(join(service_template_dir, f))]
         return templates
 
-    def render_multiple_templates(self, services, template_inventory):
-        renders = {}
-        for service in services:
-            renders.update(self.render_templates(service, template_inventory))
-        return renders
-
-    def render_templates(self, service, template_inventory):
+    def render_templates(self, path, template_inventory):
         renders = {}
         templates = self.collect_templates(self.services)
+        service = path.split('/')[-1]
         for template in templates[service]:
-            renders[template] = self.jinja_environ.get_template(template).render(template_inventory or {})
+            renders[template.split('/')[-1]] = self.jinja_environ.get_template(template).render(template_inventory or {})
         return renders
 
     def render_search_result(self, result):
