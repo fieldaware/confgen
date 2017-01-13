@@ -1,9 +1,13 @@
+import sys
 import os
 from os.path import join, isfile
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, StrictUndefined, exceptions
 
 import tabulate
+from logging import getLogger
+
+log = getLogger(__name__)
 
 class Renderer(object):
     templates_dir = 'templates'
@@ -11,7 +15,10 @@ class Renderer(object):
     def __init__(self, services, home):
         self.home = home
         self.services = services
-        self.jinja_environ = Environment(loader=FileSystemLoader(join(home, self.templates_dir)))
+        self.jinja_environ = Environment(
+            loader=FileSystemLoader(join(home, self.templates_dir)),
+            undefined=StrictUndefined
+        )
 
     def collect_templates(self, services):
         templates = {}
@@ -30,7 +37,11 @@ class Renderer(object):
         renders = {}
         templates = self.collect_templates(self.services)
         for template in templates[service]:
-            renders[template] = self.jinja_environ.get_template(template).render(template_inventory or {})
+            try:
+                renders[template] = self.jinja_environ.get_template(template).render(template_inventory or {})
+            except exceptions.UndefinedError as e:
+                log.error("while rendering: {} ({})".format(template, e.message))
+                sys.exit(1)
         return renders
 
     def render_search_result(self, result):
