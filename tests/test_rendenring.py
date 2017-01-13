@@ -1,3 +1,5 @@
+import pytest
+
 def test_collect_templates(renderer):
     assert renderer.collect_templates(renderer.services) == {
         'api': ['api/my.cnf'],
@@ -40,3 +42,11 @@ def test_render_templates_for_multiple_service_and_inventory(renderer, inventory
         'webapp/my.cnf': u'# mysql:/ override:/prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
         'webapp/production.ini': u'# mysql:/ override:/prod,/prod/main\nmysql = 3.0\n\n# secret:/\npassword = password',
     }
+
+def test_render_template_with_undefined_key(renderer, inventory):
+    built_inventory = inventory.build()
+
+    built_inventory['/prod/main'].pop('secret') # remove required key to render
+
+    with pytest.raises(SystemExit):
+        renderer.render_templates('webapp', built_inventory['/prod/main'])

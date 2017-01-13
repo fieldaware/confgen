@@ -4,7 +4,7 @@ import logging
 from logic import ConfGen
 from . import __version__
 
-logging.getLogger('confgen').addHandler(logging.StreamHandler())
+logging.basicConfig(format='[%(levelname)s] %(message)s')
 log = logging.getLogger('confgen')
 
 @click.group()
