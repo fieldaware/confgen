@@ -7,6 +7,7 @@ collected_inventory = {
     '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value'},
     '/prod': {'mysql': 2.0},
     '/test': {'secret': 'plaintext'},
+    '/test/webapp': {'mysql': 10.0},
 }
 
 def test_load_inventory(inventory):
@@ -54,6 +55,12 @@ def test_build_inventory(inventory):
             'mysql__source': 'mysql:/',
             'secret': 'plaintext',
             'secret__source': 'secret:/ override:/test',
+        },
+        '/test/webapp': {
+            'mysql': 10.0,
+            'mysql__source': 'mysql:/ override:/test/webapp',
+            'secret': 'plaintext',
+            'secret__source': 'secret:/ override:/test',
         }
     }
 
@@ -78,7 +85,8 @@ def test_build_inventory(inventory):
             '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value', 'secret': 'password'},
             '/prod': {'mysql': 2.0, 'secret': 'password'},
             '/prod/main': {'mysql': 3.0, 'secret': 'password'},
-            '/test': {'mysql': 1.0, 'secret': 'plaintext'}
+            '/test': {'mysql': 1.0, 'secret': 'plaintext'},
+            '/test/webapp': {'mysql': 10.0, 'secret': 'plaintext'},
         }
     ),
     (
@@ -107,7 +115,10 @@ def test_search_keys(inventory, pattern, expected):
     ),
     (
         'plaintext',
-        {'/test': {'mysql': 1.0, 'secret': 'plaintext'}}
+        {
+            '/test': {'mysql': 1.0, 'secret': 'plaintext'},
+            '/test/webapp': {'mysql': 10.0, 'secret': 'plaintext'},
+        }
     ),
     (
         '1.0',
