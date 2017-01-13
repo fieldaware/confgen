@@ -45,10 +45,10 @@ class ConfGen(object):
 
     def flush(self, collected):
         land_dir = join(self.home, self.build_dir)
-        # remove all files to avoid stale configs (they will re-generated)
+        # remove all files to avoid stale configs (they will be re-generated)
         shutil.rmtree(self.build_dir, ignore_errors=True)
         for path, contents in collected.items():
-            path = path.strip('/')  # remove '/' from the begging
+            path = path.strip('/')  # remove '/' from the beginning
             # create dirs if they don't exist
             inventory.mkdir_p(join(land_dir, os.path.dirname(path)))
             with open(join(land_dir, path), 'w+') as f:
