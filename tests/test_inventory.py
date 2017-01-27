@@ -103,17 +103,17 @@ def test_search_keys(inventory, pattern, expected):
 @pytest.mark.parametrize('pattern,expected', (
     (
         'my_value',
-        {'/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value', 'secret': 'password'}}
+        {'/dev/qa2': {'new_key': 'my_value'}, }
     ),
     (
         'plaintext',
-        {'/test': {'mysql': 1.0, 'secret': 'plaintext'}}
+        {'/test': {'secret': 'plaintext'}}
     ),
     (
         '1.0',
         {
-            '/': {'mysql': 1.0, 'secret': 'password'},
-            '/test': {'mysql': 1.0, 'secret': 'plaintext'},
+            '/': {'mysql': 1.0, },
+            '/test': {'mysql': 1.0, },
 
         }
     ),
