@@ -104,15 +104,10 @@ class Inventory(object):
         inventory = self.build(sources=False)
 
         def search():
-            for path, values in inventory.items():
-
-                # look in keys for values
-                if filter(rgx.search, values.keys()):
-                    yield path, values
-
-                # check in inventory values - str is necessary because they might be ints
-                elif filter(rgx.search, [str(i) for i in values.values()]):
-                    yield path, values
+            for path, inventory_entry in inventory.items():
+                for entry_key, entry_value in inventory_entry.iteritems():
+                    if rgx.search(entry_key) or rgx.search(str(entry_value)):
+                        yield path, {entry_key: entry_value}
 
         return {k: v for (k, v) in search()}
 
