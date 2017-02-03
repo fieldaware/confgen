@@ -21,23 +21,22 @@ class Renderer(object):
             undefined=StrictUndefined
         )
 
-    def collect_templates(self, services):
-        templates = {}
-        for service in services:
-            service_template_dir = join(self.home, self.templates_dir, service)
-            templates[service] = [join(service, f) for f in sorted(os.listdir(service_template_dir))
-                                  if isfile(join(service_template_dir, f))]
-        return templates
+    def collect_templates_for_services(self, services):
+        return {service: self.collect_templates_for_service(service) for service in services}
 
-    def render_multiple_templates(self, services, template_inventory):
+    def collect_templates_for_service(self, service):
+        service_template_dir = join(self.home, self.templates_dir, service)
+        return [join(service, f) for f in sorted(os.listdir(service_template_dir)) if isfile(join(service_template_dir, f))]
+
+    def render_templates_for_services(self, services, template_inventory):
         renders = {}
         for service in services:
-            renders.update(self.render_templates(service, template_inventory))
+            renders.update(self.render_templates_for_service(service, template_inventory))
         return renders
 
-    def render_templates(self, service, template_inventory):
+    def render_templates_for_service(self, service, template_inventory):
         renders = {}
-        templates = self.collect_templates(self.services)
+        templates = self.collect_templates_for_services(self.services)
         for template in templates[service]:
             try:
                 renders[template] = (self.jinja_environ.get_template(template)
