@@ -4,7 +4,6 @@ import yaml
 import os
 from click.testing import CliRunner
 import pytest
-from confgen.inventory import Inventory
 from confgen.view import Renderer
 from confgen.logic import ConfGen
 
@@ -31,13 +30,13 @@ def runner(confgenyaml):
 
 
 @pytest.fixture
-def inventory(simplerepo):
-    return Inventory(home=simplerepo)
+def inventory(confgen):
+    return confgen.inventory
 
 
 @pytest.fixture
 def renderer(confgenyaml, inventory, simplerepo):
-    return Renderer(confgenyaml['service'], home=simplerepo)
+    return Renderer(home=simplerepo)
 
 
 @pytest.fixture
