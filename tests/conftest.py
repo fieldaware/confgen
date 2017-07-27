@@ -10,6 +10,7 @@ from confgen.logic import ConfGen
 
 pwd = os.path.dirname(os.path.abspath(__file__))
 
+
 @pytest.fixture
 def simplerepo(request):
     rootdir = tempfile.mkdtemp()
@@ -17,22 +18,27 @@ def simplerepo(request):
     shutil.copytree(os.path.join(pwd, 'simplerepo'), simplerepo_dst)
     return simplerepo_dst
 
+
 @pytest.fixture
 def confgenyaml(simplerepo, request):
     return yaml.load(open(os.path.join(simplerepo, 'confgen.yaml')))
+
 
 @pytest.fixture
 def runner(confgenyaml):
     runner = CliRunner()
     return runner
 
+
 @pytest.fixture
 def inventory(simplerepo):
     return Inventory(home=simplerepo)
 
+
 @pytest.fixture
 def renderer(confgenyaml, inventory, simplerepo):
     return Renderer(confgenyaml['service'], home=simplerepo)
+
 
 @pytest.fixture
 def confgen(request, simplerepo):

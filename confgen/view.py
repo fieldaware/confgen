@@ -9,6 +9,7 @@ from logging import getLogger
 
 log = getLogger(__name__)
 
+
 class Renderer(object):
     templates_dir = 'templates'
 
@@ -24,7 +25,8 @@ class Renderer(object):
         templates = {}
         for service in services:
             service_template_dir = join(self.home, self.templates_dir, service)
-            templates[service] = [join(service, f) for f in os.listdir(service_template_dir) if isfile(join(service_template_dir, f))]
+            templates[service] = [join(service, f) for f in os.listdir(service_template_dir)
+                                  if isfile(join(service_template_dir, f))]
         return templates
 
     def render_multiple_templates(self, services, template_inventory):
@@ -38,13 +40,15 @@ class Renderer(object):
         templates = self.collect_templates(self.services)
         for template in templates[service]:
             try:
-                renders[template] = self.jinja_environ.get_template(template).render(template_inventory or {})
+                renders[template] = (self.jinja_environ.get_template(template)
+                                     .render(template_inventory or {}))
             except exceptions.UndefinedError as e:
                 log.error("while rendering: {} ({})".format(template, e.message))
                 sys.exit(1)
         return renders
 
-    def render_search_result(self, result):
+    @staticmethod
+    def render_search_result(result):
         table = []
         for path, inventory in result.items():
             for ikey, ivalue in inventory.items():

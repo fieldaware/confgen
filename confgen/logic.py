@@ -7,6 +7,7 @@ import collections
 import inventory
 import view
 
+
 def flatten_dict(d, parent_key='', sep='/'):
     items = []
     for k, v in d.items():
@@ -16,6 +17,7 @@ def flatten_dict(d, parent_key='', sep='/'):
         else:
             items.append((new_key, v))
     return dict(items)
+
 
 class ConfGen(object):
     build_dir = 'build'
