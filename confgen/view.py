@@ -25,7 +25,7 @@ class Renderer(object):
         templates = {}
         for service in services:
             service_template_dir = join(self.home, self.templates_dir, service)
-            templates[service] = [join(service, f) for f in os.listdir(service_template_dir)
+            templates[service] = [join(service, f) for f in sorted(os.listdir(service_template_dir))
                                   if isfile(join(service_template_dir, f))]
         return templates
 
