@@ -6,3 +6,4 @@ dist/*
 .tox/*
 .cache/*
 .coverage
+.idea/
