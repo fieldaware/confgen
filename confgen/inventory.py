@@ -5,23 +5,23 @@ from os.path import join
 
 import yaml
 
+
 def mkdir_p(path):
     try:
         os.makedirs(path)
     except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
+        if not exc.errno == errno.EEXIST:
             raise
 
+
 class Inventory(object):
-    '''
+    """
     Represents, builds and saves the invetory.
 
     It is represented as a directory structure for easy managment.
     Diffs for single file would be hard to read and maintain, while single files
     are trivial to manage.
-    '''
+    """
     inventory_delimiter = '/'
     config_filename = 'config.yaml'
     source_key_pattern = '{key}__source'
@@ -31,18 +31,18 @@ class Inventory(object):
         self.inventory_dir = join(home, 'inventory')
 
     def _parse_file_path(self, path):
-        '''
-        takes absolute path in inventory and parses it relative
-        '''
+        """
+        Takes absolute path in inventory and parses it relative
+        """
         relative_path = path[len(self.inventory_dir):]  # strip absolute path
         if relative_path == '':  # set root path as '/'
             return '/'
         return relative_path
 
     def collect(self):
-        '''
-        walks to home dir and collects yaml files
-        '''
+        """
+        Walks to home dir and collects yaml files
+        """
         inventory = {}
         for path, dirs, files in os.walk(self.inventory_dir):
             if files:
@@ -51,9 +51,9 @@ class Inventory(object):
         return inventory
 
     def set(self, path, key, value):
-        '''
-        add a value to the inventory and saves results to disk
-        '''
+        """
+        Add a value to the inventory and saves results to disk
+        """
         collected = self.collect()
         if path not in collected:
             collected[path] = {}
@@ -61,9 +61,9 @@ class Inventory(object):
         self._flush(collected)
 
     def delete(self, path, key):
-        '''
-        deletes keys/value pair from the inventory and saves results to disk
-        '''
+        """
+        Deletes keys/value pair from the inventory and saves results to disk
+        """
         collected = self.collect()
         if path not in collected:
             return
@@ -72,19 +72,19 @@ class Inventory(object):
         self._flush(collected)
 
     def _flush(self, inventory):
-        '''
-        saves given inventory to disk
-        '''
+        """
+        Saves given inventory to disk
+        """
         for path, contents in inventory.items():
             dst_dir = join(self.inventory_dir, path.strip('/'))
             mkdir_p(dst_dir)
             with open(join(dst_dir, self.config_filename), 'w+') as f:
-                yaml.dump(contents, f, default_flow_style=False)
+                yaml.safe_dump(contents, f, default_flow_style=False)
 
     def build(self, sources=True):
-        '''
-        builds flat dict structure based on loaded files
-        '''
+        """
+        Builds flat dict structure based on loaded files
+        """
         inventory = self.collect()
         return {path: self._build_single_row(inventory, path, sources) for path in inventory}
 
@@ -111,14 +111,15 @@ class Inventory(object):
 
         return {k: v for (k, v) in search()}
 
-    def traverse(self, path):
-        '''
-        takses a path and yields all its componenets from top to bottom
+    @staticmethod
+    def traverse(path):
+        """
+        Takes a path and yields all its componenets from top to bottom
 
         / -> /
         /prod -> /, /prod
         /dev/qa1 -> /, /dev, /dev/qa1
-        '''
+        """
         list_path = path.rstrip('/').split('/')
         for i in range(len(list_path)):
             yield '/'.join(list_path[:i + 1]) or '/'
