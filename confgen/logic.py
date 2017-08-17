@@ -4,8 +4,8 @@ from os.path import join
 import yaml
 import collections
 
-import inventory
-import view
+from . import inventory
+from . import view
 
 
 def flatten_dict(d, parent_key='', sep='/'):

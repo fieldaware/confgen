@@ -1,7 +1,7 @@
 import click
 import logging
 
-from logic import ConfGen
+from .logic import ConfGen
 from . import __version__
 
 logging.basicConfig(format='[%(levelname)s] %(message)s')
@@ -29,14 +29,14 @@ def search():
 @click.argument('pattern')
 @click.pass_obj
 def key(ctx, pattern):
-    print ctx.search_key(pattern)
+    print(ctx.search_key(pattern))
 
 
 @search.command()
 @click.argument('pattern')
 @click.pass_obj
 def value(ctx, pattern):
-    print ctx.search_value(pattern)
+    print(ctx.search_value(pattern))
 
 
 @cli.command()
@@ -64,7 +64,7 @@ def delete(ctx, path, key):
 
 @cli.command()
 def version():
-    print __version__
+    print(__version__)
 
 
 @cli.command()

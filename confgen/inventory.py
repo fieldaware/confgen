@@ -105,7 +105,7 @@ class Inventory(object):
 
         def search():
             for path, inventory_entry in inventory.items():
-                for entry_key, entry_value in inventory_entry.iteritems():
+                for entry_key, entry_value in inventory_entry.items():
                     if rgx.search(entry_key) or rgx.search(str(entry_value)):
                         yield path, {entry_key: entry_value}
 
