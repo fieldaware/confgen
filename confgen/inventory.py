@@ -88,7 +88,7 @@ class Inventory(object):
         inventory = self.collect()
         return {path: self._build_single_row(inventory, path, sources) for path in inventory}
 
-    def invetory_for_path(self, inventory, path):
+    def inventory_for_path(self, inventory, path):
         for path in reversed(list(self.traverse(path))):
             candidate = inventory.get(path)
             if candidate:

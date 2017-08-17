@@ -2,6 +2,7 @@ import shutil
 import os
 from os.path import join
 import yaml
+import copy
 import collections
 
 from . import inventory
@@ -21,10 +22,14 @@ def flatten_dict(d, parent_key='', sep='/'):
 
 class ConfGen(object):
     build_dir = 'build'
+    hierarchy_key = "_hierarchy"
+    global_key = "_global"
 
     def __init__(self, home, config):
         self.home = home
         self.config = yaml.load(config)
+        assert 'hierarchy' in self.config, "hierarchy list is required"
+        assert 'service' in self.config, "service list is required"
         self.inventory = inventory.Inventory(home)
         self.renderer = view.Renderer(self.config['service'], home)
 
@@ -32,9 +37,19 @@ class ConfGen(object):
     def flatten_infra(self):
         return flatten_dict(self.config['infra'])
 
+    def hierarchy_for_path(self, path):
+        if path == "/" or path == "":
+            return {}
+        return dict(zip(self.config['hierarchy'], path.split('/')[1:]))
+
     def merge_config_with_inventory(self):
         public_inventory = self.inventory.build()
-        return {path: self.inventory.invetory_for_path(public_inventory, path) for path in self.flatten_infra}
+        merged = {path: copy.deepcopy(self.inventory.inventory_for_path(public_inventory, path)) for path in self.flatten_infra}
+        _global = copy.deepcopy(merged)
+        for path in merged:
+            merged[path][self.hierarchy_key] = self.hierarchy_for_path(path)
+            merged[path][self.global_key] = _global
+        return merged
 
     def collect(self):
         config_with_inventory = self.merge_config_with_inventory()
