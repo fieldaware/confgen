@@ -13,6 +13,55 @@ def mkdir_p(path):
         if not exc.errno == errno.EEXIST:
             raise
 
+class Node(object):
+    def __init__(self, name='', nodes=(), attributes=None):
+        self._name = name
+        self._dict = {str(item): item for item in nodes}
+        self._attrs = attributes or {}
+
+    def __getitem__(self, name):
+        return self._dict[name]
+
+    def __str__(self):
+        return self._name
+
+    def __repr__(self):
+        return "<Node: {}> {}".format(id(self), self._name)
+
+    def __iter__(self):
+        return self._dict.values().__iter__()
+
+    def __getattr__(self, name):
+        try:
+            return self._attrs[name]
+        except KeyError as e:
+            raise AttributeError(e)
+
+
+class Tree(object):
+    root_path = "."
+
+    def __init__(self):
+        self._root = Node(self.root_path)
+
+    def add_node(self, keys, attr):
+        node = Node(name=name, attributes=attr)
+        to_add = self.safeget(*path)
+        to_add[str(node)] = node
+
+    def safeget(self, *keys):
+        '''
+        get a value from a nested dict
+        '''
+        if keys == [self.root_path, ]:
+            return self._root
+        ret = self._root
+        for key in keys:
+            try:
+                ret = ret[key]
+            except KeyError:
+                return None
+        return ret
 
 class Inventory(object):
     """
