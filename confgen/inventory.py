@@ -19,6 +19,13 @@ class Node(object):
         self._dict = {str(item): item for item in nodes}
         self._attrs = attributes or {}
 
+    @property
+    def has_children(self):
+        return bool(self._dict)
+
+    def __setitem__(self, key, value):
+        self._dict[key] = value
+
     def __getitem__(self, name):
         return self._dict[name]
 
@@ -31,37 +38,81 @@ class Node(object):
     def __iter__(self):
         return self._dict.values().__iter__()
 
+    def update_attrs(self, attrs):
+        self._attrs.update(attrs)
+
+    @property
+    def all_attrs(self):
+        return self._attrs
+
     def __getattr__(self, name):
         try:
             return self._attrs[name]
         except KeyError as e:
             raise AttributeError(e)
 
-
 class Tree(object):
-    root_path = "."
-
     def __init__(self):
-        self._root = Node(self.root_path)
+        self._root = Node(name='/')
 
-    def add_node(self, keys, attr):
-        node = Node(name=name, attributes=attr)
-        to_add = self.safeget(*path)
-        to_add[str(node)] = node
+    def get_built(self, path):
 
-    def safeget(self, *keys):
-        '''
-        get a value from a nested dict
-        '''
-        if keys == [self.root_path, ]:
-            return self._root
+        def traverse(node, parent_node):
+            print 'updating {} with attrs {} with {} with attrs {}'.format(node, node._attrs, parent_node, parent_node._attrs)
+            node._attrs.update(parent_node._attrs)
+
+            for child in node:
+                traverse(child, node)
+        traverse(self._root, self._root)
+
+    def set(self, path, attr):
+        if path == "/":
+            self._root.update_attrs(attr)
+        keys = path.strip('/').split('/')
         ret = self._root
-        for key in keys:
+        for i, key in enumerate(keys):
             try:
                 ret = ret[key]
             except KeyError:
-                return None
+                if i + 1 == len(keys):
+                    ret[key] = Node(name=key, attributes=attr)
+                else:
+                    ret[key] = Node(name=key)
+                ret = ret[key]
         return ret
+
+    def get(self, path):
+        if path == "/":
+            return self._root
+        keys = path.strip('/').split('/')
+
+        def traverse(parts, node):
+            print parts, node
+            if not parts:
+                return node
+            else:
+                next_key, rest = parts[0], parts[1:]
+                return traverse(rest, node[next_key])
+        return traverse(keys, self._root)
+
+    def unfold(self, path, sources=True):
+        if path == "/":
+            return self._root
+        keys = path.strip('/').split('/')
+
+        def traverse(parts, node):
+            if not parts:
+                return node
+            else:
+                next_key, rest = parts[0], parts[1:]
+                n = node[next_key]
+                for k,v in node._attrs.items():
+                    if k not in n:
+                        print 'updating {} with k: {} and v: {}'.format(n, k ,v)
+                        n[k] = v
+
+                return traverse(rest, n)
+        return traverse(keys, self._root)
 
 class Inventory(object):
     """
@@ -92,12 +143,12 @@ class Inventory(object):
         """
         Walks to home dir and collects yaml files
         """
-        inventory = {}
+        tree = Tree()
         for path, dirs, files in os.walk(self.inventory_dir):
             if files:
                 configyml = yaml.load(open(join(path, self.config_filename)))
-                inventory[self._parse_file_path(path)] = configyml
-        return inventory
+                tree.set(self._parse_file_path(path), configyml)
+        return tree
 
     def set(self, path, key, value):
         """
@@ -130,13 +181,6 @@ class Inventory(object):
             with open(join(dst_dir, self.config_filename), 'w+') as f:
                 yaml.safe_dump(contents, f, default_flow_style=False)
 
-    def build(self, sources=True):
-        """
-        Builds flat dict structure based on loaded files
-        """
-        inventory = self.collect()
-        return {path: self._build_single_row(inventory, path, sources) for path in inventory}
-
     def inventory_for_path(self, inventory, path):
         for path in reversed(list(self.traverse(path))):
             candidate = inventory.get(path)
@@ -160,28 +204,10 @@ class Inventory(object):
 
         return {k: v for (k, v) in search()}
 
-    @staticmethod
-    def traverse(path):
-        """
-        Takes a path and yields all its componenets from top to bottom
-
-        / -> /
-        /prod -> /, /prod
-        /dev/qa1 -> /, /dev, /dev/qa1
-        """
-        list_path = path.rstrip('/').split('/')
-        for i in range(len(list_path)):
-            yield '/'.join(list_path[:i + 1]) or '/'
-
-    def _build_single_row(self, inventory, path, sources):
-        kv_set = {}
-        for path in self.traverse(path):
-            update_with = inventory.get(path, {})
-            kv_set.update(update_with)
-
-        if sources:
-            kv_set.update(self._track_invetory_source(inventory, path))
-        return kv_set
+    def build(self, sources=True):
+        inventory = self.collect()
+        inventory.build()
+        return inventory
 
     def _track_invetory_source(self, inventory, path):
         sources = {}

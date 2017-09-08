@@ -1,61 +1,48 @@
 import pytest
 import copy
-collected_inventory = {
-    '/': {'mysql': 1.0, 'secret': 'password'},
-    '/prod/main': {'mysql': 3.0},
-    '/dev/qa1': {'mysql': 4.0},
-    '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value'},
-    '/prod': {'mysql': 2.0},
-    '/test': {'secret': 'plaintext'},
-}
+
+def assert_collected_inventory(tree):
+    assert tree.get('/').mysql == 1.0
+    assert tree.get('/').secret == 'password'
+    assert tree.get('/prod/main').mysql == 3.0
+    assert tree.get('/dev/qa1').mysql == 4.0
+    assert tree.get('/dev/qa2').mysql == 9.0
+    assert tree.get('/dev/qa2').new_key == 'my_value'
+    assert tree.get('/prod').mysql == 2.0
+    assert tree.get('/test').secret == 'plaintext'
 
 def test_load_inventory(inventory):
-    loaded = inventory.collect()
-    assert loaded == collected_inventory
+    assert_collected_inventory(inventory.collect())
 
-def test_build_inventory(inventory):
-    public_inventory = inventory.build()
+def test_unfolded_inventory(inventory):
+    i = inventory.collect()
 
-    assert public_inventory == {
-        '/': {
-            'mysql': 1.0,
-            'mysql__source': 'mysql:/',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/dev/qa1': {
-            'mysql': 4.0,
-            'mysql__source': 'mysql:/ override:/dev/qa1',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/dev/qa2': {
-            'mysql': 9.0,
-            'mysql__source': 'mysql:/ override:/dev/qa2',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-            'new_key': 'my_value',
-            'new_key__source': 'new_key:/dev/qa2',
-        },
-        '/prod': {
-            'mysql': 2.0,
-            'mysql__source': 'mysql:/ override:/prod',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/prod/main': {
-            'mysql': 3.0,
-            'mysql__source': 'mysql:/ override:/prod,/prod/main',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/test': {
-            'mysql': 1.0,
-            'mysql__source': 'mysql:/',
-            'secret': 'plaintext',
-            'secret__source': 'secret:/ override:/test',
-        }
-    }
+    assert i.get('/').mysql == 1.0
+    # assert i.get('/').mysql__source == '/'
+    assert i.get('/').secret == 'password'
+    # assert i.get('/').secret__source == '/'
+    assert i.get('/dev/qa1').mysql == 4.0
+    # assert i.get('/dev/qa1').mysql__source == '/ override:/dev/qa1'
+    assert i.get('/dev/qa1').secret == 'password'
+    # assert i.get('/dev/qa1').secret__source == '/'
+    assert i.get('/dev/qa2').mysql == 9.0
+    # assert i.get('/dev/qa2').mysql__source == '/ override:/dev/qa2'
+    assert i.get('/dev/qa2').secret == 'password'
+    # assert i.get('/dev/qa2').secret__source == '/'
+    assert i.get('/dev/qa2').new_key == 'my_value'
+    # assert i.get('/dev/qa2').new_key__source == '/dev/qa2'
+    assert i.get('/prod').mysql == 2.0
+    # assert i.get('/prod').mysql__source == '/ override:/prod'
+    assert i.get('/prod').secret == 'password'
+    # assert i.get('/prod').secret__source == '/'
+    assert i.get('/prod/main').mysql == 3.0
+    # assert i.get('/prod/main').mysql__source == '/ override:/prod,/prod/main'
+    assert i.get('/prod/main').secret == 'password'
+    # assert i.get('/prod/main').secret__source == '/'
+    assert i.get('/test').mysql == 1.0
+    # assert i.get('/test').mysql__source == '/'
+    assert i.get('/test').secret == 'plaintext'
+    # assert i.get('/test').secret__source == '/ override:/test'
 
 
 @pytest.mark.parametrize('pattern,expected', (
