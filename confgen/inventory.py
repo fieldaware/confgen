@@ -16,18 +16,25 @@ def mkdir_p(path):
 class Node(object):
     def __init__(self, name='', nodes=(), attributes=None):
         self._name = name
-        self._dict = {str(item): item for item in nodes}
+        self._nodes = {str(item): item for item in nodes}
         self._attrs = attributes or {}
 
     @property
     def has_children(self):
-        return bool(self._dict)
+        return bool(self._nodes)
 
     def __setitem__(self, key, value):
-        self._dict[key] = value
+        self._nodes[key] = value
 
-    def __getitem__(self, name):
-        return self._dict[name]
+    def __getitem__(self, key):
+        return self._nodes[key]
+
+    def setdefault(self, key, value):
+        try:
+            return self._nodes[key]
+        except KeyError:
+            self._nodes[key] = value
+        return value
 
     def __str__(self):
         return self._name
@@ -36,7 +43,7 @@ class Node(object):
         return "<Node: {}> {}".format(id(self), self._name)
 
     def __iter__(self):
-        return self._dict.values().__iter__()
+        return self._nodes.values().__iter__()
 
     def update_attrs(self, attrs):
         self._attrs.update(attrs)
@@ -51,7 +58,7 @@ class Node(object):
         except KeyError as e:
             raise AttributeError(e)
 
-class Tree(object):
+class DB(object):
     def __init__(self):
         self._root = Node(name='/')
 
@@ -65,54 +72,39 @@ class Tree(object):
                 traverse(child, node)
         traverse(self._root, self._root)
 
-    def set(self, path, attr):
+    def nodes(self, path):
+        yield self._root
+        parts = path.strip('/').split('/')
+
+        node = self._root
+        for part in parts:
+            node = node[part]
+            yield node
+
+    def set(self, path, attrs):
         if path == "/":
-            self._root.update_attrs(attr)
-        keys = path.strip('/').split('/')
-        ret = self._root
-        for i, key in enumerate(keys):
-            try:
-                ret = ret[key]
-            except KeyError:
-                if i + 1 == len(keys):
-                    ret[key] = Node(name=key, attributes=attr)
-                else:
-                    ret[key] = Node(name=key)
-                ret = ret[key]
-        return ret
+            self._root.update_attrs(attrs)
+        parts = path.strip('/').split('/')
+
+        node = self._root
+        for part in parts:
+            # Get (or create Node)
+            node = node.setdefault(part, Node(name=part))
+
+        # set the attrs on the final node (i.e. the end of path)
+        node.update_attrs(attrs)
 
     def get(self, path):
-        if path == "/":
-            return self._root
-        keys = path.strip('/').split('/')
+        # return the last node on the path
+        return list(self.nodes(path))[-1]
 
-        def traverse(parts, node):
-            print parts, node
-            if not parts:
-                return node
-            else:
-                next_key, rest = parts[0], parts[1:]
-                return traverse(rest, node[next_key])
-        return traverse(keys, self._root)
+    def flatten(self, path, sources=True):
+        attrs = {}
+        nodes = list(self.nodes(path))
+        for node in self.nodes(path):
+            attrs.update(node.all_attrs)
+        return Node(name=str(node), attributes=attrs)
 
-    def unfold(self, path, sources=True):
-        if path == "/":
-            return self._root
-        keys = path.strip('/').split('/')
-
-        def traverse(parts, node):
-            if not parts:
-                return node
-            else:
-                next_key, rest = parts[0], parts[1:]
-                n = node[next_key]
-                for k,v in node._attrs.items():
-                    if k not in n:
-                        print 'updating {} with k: {} and v: {}'.format(n, k ,v)
-                        n[k] = v
-
-                return traverse(rest, n)
-        return traverse(keys, self._root)
 
 class Inventory(object):
     """
@@ -143,7 +135,7 @@ class Inventory(object):
         """
         Walks to home dir and collects yaml files
         """
-        tree = Tree()
+        tree = DB()
         for path, dirs, files in os.walk(self.inventory_dir):
             if files:
                 configyml = yaml.load(open(join(path, self.config_filename)))
