@@ -43,6 +43,12 @@ def test_2_level_node():
     # assert you cannot rely on the order in the list
     assert set(leafs) == {'foo1', 'foo2'}
 
+def test_db_all_nodes():
+    db = DB()
+    nodes = [i for i in db.nodes('/')]
+    assert len(nodes) == 1
+    assert str(nodes[0]) == '/'
+
 def test_db_update_root():
     db = DB()
     db.set('/', attrs={'attr_foo': 'bar'})
@@ -81,7 +87,7 @@ def test_db_get_no_middle_path():
     assert db.get('/').attr_foo == "bar"
     assert db.get('/prod/main').attr_foo == "main_attr"
 
-def test_db_unfold_no_middle_path():
+def test_db_flatten_no_middle_path():
     db = DB()
     db.set('/', attrs={'attr_foo': 'bar'})
     db.set('/prod/main', attrs={'attr_foo': 'main_attr'})
@@ -89,7 +95,7 @@ def test_db_unfold_no_middle_path():
     assert db.flatten('/prod').attr_foo == "bar"
     assert db.flatten('/prod/main').attr_foo == "main_attr"
 
-def test_db_unfold_full():
+def test_db_flatten_full():
     db = DB()
     db.set('/', attrs={'attr_foo': 'bar', 'default': 'default_root'})
     db.set('/prod', attrs={'other_attr': 'foo'})
@@ -105,3 +111,14 @@ def test_db_unfold_full():
     assert db.flatten('/prod/main').attr_foo == 'main_attr'
     assert db.flatten('/prod/main').other_attr == 'foo'
     assert db.flatten('/prod/main').default == 'default_root'
+
+def test_falatten_with_sources():
+    db = DB()
+    db.set('/', attrs={'attr_foo': 'bar'})
+    db.set('/prod', attrs={'attr_foo': 'foo'})
+
+    assert db.flatten('/prod').attr_foo == 'foo'
+    assert db.flatten('/prod').attr_foo__source == "/ override: prod"
+
+    assert db.flatten('/').attr_foo == "bar"
+    assert db.flatten('/').attr_foo__source == "/"

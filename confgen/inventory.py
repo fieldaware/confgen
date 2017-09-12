@@ -3,6 +3,8 @@ import errno
 import os
 from os.path import join
 
+from collections import defaultdict
+
 import yaml
 
 
@@ -64,8 +66,9 @@ class DB(object):
 
     def nodes(self, path):
         yield self._root
+        if path == "/":
+            raise StopIteration
         parts = path.strip('/').split('/')
-
         node = self._root
         for part in parts:
             node = node[part]
@@ -90,10 +93,20 @@ class DB(object):
 
     def flatten(self, path, sources=True):
         attrs = {}
+        sources = defaultdict(list)
+        full_path = ""
         for node in self.nodes(path):
+            full_path = os.path.join(full_path, str(node))
             attrs.update(node.all_attrs)
-        return Node(name=str(node), attributes=attrs)
+            for overlap in set(attrs.keys()).intersection(set(node.all_attrs)):
+                sources[overlap].append(full_path)
 
+        for key, appearnces in sources.items():
+            if len(appearnces) == 1:
+                attrs["{}__source".format(key)] = appearnces[0]
+            else:
+                attrs["{}__source".format(key)] = "{} override: {}".format(appearnces[0], ", ".join(appearnces[1:]))
+        return Node(name=str(node), attributes=attrs)
 
 class Inventory(object):
     """
@@ -189,16 +202,3 @@ class Inventory(object):
         inventory = self.collect()
         inventory.build()
         return inventory
-
-    def _track_invetory_source(self, inventory, path):
-        sources = {}
-        for path in self.traverse(path):
-            for k in inventory.get(path, {}):
-                sources.setdefault(k, []).append(path)
-
-        prefixed_source_vars = {
-            Inventory.source_key_pattern.format(key=k):
-                '{key}:{path}'.format(key=k, path=v[0]) + (' override:{paths}'.format(paths=','.join(v[1:])) if v[1:] else '')
-            for k, v in sources.items()
-        }
-        return prefixed_source_vars
