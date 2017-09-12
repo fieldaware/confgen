@@ -30,78 +30,78 @@ def test_attr_multiple_dict():
     assert node.list == [1, 2, 3]
 
 def test_2_level_node():
-    tree = Node("root", attributes={'level1': 'root'}, nodes=[
+    db = Node("root", attributes={'level1': 'root'}, nodes=[
         Node("leaf1", attributes={'level2': 'foo1'}),
         Node("leaf2", attributes={'level2': 'foo2'})
     ])
 
-    assert tree.level1 == 'root'
-    assert tree['leaf1'].level2 == 'foo1'
-    assert tree['leaf2'].level2 == 'foo2'
+    assert db.level1 == 'root'
+    assert db['leaf1'].level2 == 'foo1'
+    assert db['leaf2'].level2 == 'foo2'
 
-    leafs = [getattr(i, 'level2') for i in tree]
+    leafs = [getattr(i, 'level2') for i in db]
     # assert you cannot rely on the order in the list
     assert set(leafs) == {'foo1', 'foo2'}
 
-def test_tree_update_root():
-    tree = DB()
-    tree.set('/', attrs={'attr_foo': 'bar'})
-    assert tree.get("/").attr_foo == "bar"
+def test_db_update_root():
+    db = DB()
+    db.set('/', attrs={'attr_foo': 'bar'})
+    assert db.get("/").attr_foo == "bar"
 
-def test_tree_add_to_root():
-    tree = DB()
-    tree.set('/prod', attrs={'attr_foo': 'prod_attr'})
-    assert tree.get('/prod').attr_foo == "prod_attr"
+def test_db_add_to_root():
+    db = DB()
+    db.set('/prod', attrs={'attr_foo': 'prod_attr'})
+    assert db.get('/prod').attr_foo == "prod_attr"
 
-def test_tree_nested_paths():
-    tree = DB()
-    tree.set('/', attrs={'attr_foo': 'bar'})
-    tree.set('/prod', attrs={'attr_foo': 'prod_attr'})
-    tree.set('/prod/main', attrs={'attr_foo': 'main_attr'})
-    assert tree.get('/').attr_foo == "bar"
-    assert tree.get('/prod').attr_foo == "prod_attr"
-    assert tree.get('/prod/main').attr_foo == "main_attr"
+def test_db_nested_paths():
+    db = DB()
+    db.set('/', attrs={'attr_foo': 'bar'})
+    db.set('/prod', attrs={'attr_foo': 'prod_attr'})
+    db.set('/prod/main', attrs={'attr_foo': 'main_attr'})
+    assert db.get('/').attr_foo == "bar"
+    assert db.get('/prod').attr_foo == "prod_attr"
+    assert db.get('/prod/main').attr_foo == "main_attr"
 
-def test_tree_update_existing_nodes():
-    tree = DB()
-    tree.set('/', attrs={'attr_foo': 'bar'})
-    tree.set('/', attrs={'attr_foo2': 'bar2'})
-    tree.set('/prod', attrs={'attr_foo': 'prod_attr'})
-    tree.set('/prod', attrs={'attr_foo2': 'prod_attr2'})
-    tree.set('/prod/main', attrs={'attr_foo': 'main_attr'})
-    tree.set('/prod/main', attrs={'attr_foo2': 'main_attr2'})
-    assert tree.get('/').attr_foo2 == "bar2"
-    assert tree.get('/prod').attr_foo2 == "prod_attr2"
-    assert tree.get('/prod/main').attr_foo2 == "main_attr2"
+def test_db_update_existing_node():
+    db = DB()
+    db.set('/', attrs={'attr_foo': 'bar'})
+    db.set('/', attrs={'attr_foo2': 'bar2'})
+    db.set('/prod', attrs={'attr_foo': 'prod_attr'})
+    db.set('/prod', attrs={'attr_foo2': 'prod_attr2'})
+    db.set('/prod/main', attrs={'attr_foo': 'main_attr'})
+    db.set('/prod/main', attrs={'attr_foo2': 'main_attr2'})
+    assert db.get('/').attr_foo2 == "bar2"
+    assert db.get('/prod').attr_foo2 == "prod_attr2"
+    assert db.get('/prod/main').attr_foo2 == "main_attr2"
 
-def test_tree_get_no_middle_path():
-    tree = DB()
-    tree.set('/', attrs={'attr_foo': 'bar'})
-    tree.set('/prod/main', attrs={'attr_foo': 'main_attr'})
-    assert tree.get('/').attr_foo == "bar"
-    assert tree.get('/prod/main').attr_foo == "main_attr"
+def test_db_get_no_middle_path():
+    db = DB()
+    db.set('/', attrs={'attr_foo': 'bar'})
+    db.set('/prod/main', attrs={'attr_foo': 'main_attr'})
+    assert db.get('/').attr_foo == "bar"
+    assert db.get('/prod/main').attr_foo == "main_attr"
 
-def test_tree_unfold_no_middle_path():
-    tree = DB()
-    tree.set('/', attrs={'attr_foo': 'bar'})
-    tree.set('/prod/main', attrs={'attr_foo': 'main_attr'})
-    assert tree.flatten('/').attr_foo == "bar"
-    assert tree.flatten('/prod').attr_foo == "bar"
-    assert tree.flatten('/prod/main').attr_foo == "main_attr"
+def test_db_unfold_no_middle_path():
+    db = DB()
+    db.set('/', attrs={'attr_foo': 'bar'})
+    db.set('/prod/main', attrs={'attr_foo': 'main_attr'})
+    assert db.flatten('/').attr_foo == "bar"
+    assert db.flatten('/prod').attr_foo == "bar"
+    assert db.flatten('/prod/main').attr_foo == "main_attr"
 
-def test_tree_unfold_full():
-    tree = DB()
-    tree.set('/', attrs={'attr_foo': 'bar', 'default': 'default_root'})
-    tree.set('/prod', attrs={'other_attr': 'foo'})
-    tree.set('/prod/main', attrs={'attr_foo': 'main_attr'})
+def test_db_unfold_full():
+    db = DB()
+    db.set('/', attrs={'attr_foo': 'bar', 'default': 'default_root'})
+    db.set('/prod', attrs={'other_attr': 'foo'})
+    db.set('/prod/main', attrs={'attr_foo': 'main_attr'})
 
-    assert tree.flatten('/').attr_foo == "bar"
-    assert tree.flatten('/').default == "default_root"
+    assert db.flatten('/').attr_foo == "bar"
+    assert db.flatten('/').default == "default_root"
 
-    assert tree.flatten('/prod').other_attr == "foo"
-    assert tree.flatten('/prod').attr_foo == "bar"
-    assert tree.flatten('/prod').default == "default_root"
+    assert db.flatten('/prod').other_attr == "foo"
+    assert db.flatten('/prod').attr_foo == "bar"
+    assert db.flatten('/prod').default == "default_root"
 
-    assert tree.flatten('/prod/main').attr_foo == 'main_attr'
-    assert tree.flatten('/prod/main').other_attr == 'foo'
-    assert tree.flatten('/prod/main').default == 'default_root'
+    assert db.flatten('/prod/main').attr_foo == 'main_attr'
+    assert db.flatten('/prod/main').other_attr == 'foo'
+    assert db.flatten('/prod/main').default == 'default_root'

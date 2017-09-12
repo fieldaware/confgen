@@ -62,16 +62,6 @@ class DB(object):
     def __init__(self):
         self._root = Node(name='/')
 
-    def get_built(self, path):
-
-        def traverse(node, parent_node):
-            print 'updating {} with attrs {} with {} with attrs {}'.format(node, node._attrs, parent_node, parent_node._attrs)
-            node._attrs.update(parent_node._attrs)
-
-            for child in node:
-                traverse(child, node)
-        traverse(self._root, self._root)
-
     def nodes(self, path):
         yield self._root
         parts = path.strip('/').split('/')
@@ -100,7 +90,6 @@ class DB(object):
 
     def flatten(self, path, sources=True):
         attrs = {}
-        nodes = list(self.nodes(path))
         for node in self.nodes(path):
             attrs.update(node.all_attrs)
         return Node(name=str(node), attributes=attrs)
