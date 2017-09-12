@@ -124,12 +124,12 @@ class Inventory(object):
         """
         Walks to home dir and collects yaml files
         """
-        tree = DB()
+        db = DB()
         for path, dirs, files in os.walk(self.inventory_dir):
             if files:
                 configyml = yaml.load(open(join(path, self.config_filename)))
-                tree.set(self._parse_file_path(path), configyml)
-        return tree
+                db.set(self._parse_file_path(path), configyml)
+        return db
 
     def set(self, path, key, value):
         """

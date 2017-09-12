@@ -14,35 +14,35 @@ def assert_collected_inventory(tree):
 def test_load_inventory(inventory):
     assert_collected_inventory(inventory.collect())
 
-def test_unfolded_inventory(inventory):
+def test_flatten_inventory(inventory):
     i = inventory.collect()
 
-    assert i.get('/').mysql == 1.0
-    # assert i.get('/').mysql__source == '/'
-    assert i.get('/').secret == 'password'
-    # assert i.get('/').secret__source == '/'
-    assert i.get('/dev/qa1').mysql == 4.0
-    # assert i.get('/dev/qa1').mysql__source == '/ override:/dev/qa1'
-    assert i.get('/dev/qa1').secret == 'password'
-    # assert i.get('/dev/qa1').secret__source == '/'
-    assert i.get('/dev/qa2').mysql == 9.0
-    # assert i.get('/dev/qa2').mysql__source == '/ override:/dev/qa2'
-    assert i.get('/dev/qa2').secret == 'password'
-    # assert i.get('/dev/qa2').secret__source == '/'
-    assert i.get('/dev/qa2').new_key == 'my_value'
-    # assert i.get('/dev/qa2').new_key__source == '/dev/qa2'
-    assert i.get('/prod').mysql == 2.0
-    # assert i.get('/prod').mysql__source == '/ override:/prod'
-    assert i.get('/prod').secret == 'password'
-    # assert i.get('/prod').secret__source == '/'
-    assert i.get('/prod/main').mysql == 3.0
-    # assert i.get('/prod/main').mysql__source == '/ override:/prod,/prod/main'
-    assert i.get('/prod/main').secret == 'password'
-    # assert i.get('/prod/main').secret__source == '/'
-    assert i.get('/test').mysql == 1.0
-    # assert i.get('/test').mysql__source == '/'
-    assert i.get('/test').secret == 'plaintext'
-    # assert i.get('/test').secret__source == '/ override:/test'
+    assert i.flatten('/').mysql == 1.0
+    # assert i.flatten('/').mysql__source == '/'
+    assert i.flatten('/').secret == 'password'
+    # assert i.flatten('/').secret__source == '/'
+    assert i.flatten('/dev/qa1').mysql == 4.0
+    # assert i.flatten('/dev/qa1').mysql__source == '/ override:/dev/qa1'
+    assert i.flatten('/dev/qa1').secret == 'password'
+    # assert i.flatten('/dev/qa1').secret__source == '/'
+    assert i.flatten('/dev/qa2').mysql == 9.0
+    # assert i.flatten('/dev/qa2').mysql__source == '/ override:/dev/qa2'
+    assert i.flatten('/dev/qa2').secret == 'password'
+    # assert i.flatten('/dev/qa2').secret__source == '/'
+    assert i.flatten('/dev/qa2').new_key == 'my_value'
+    # assert i.flatten('/dev/qa2').new_key__source == '/dev/qa2'
+    assert i.flatten('/prod').mysql == 2.0
+    # assert i.flatten('/prod').mysql__source == '/ override:/prod'
+    assert i.flatten('/prod').secret == 'password'
+    # assert i.flatten('/prod').secret__source == '/'
+    assert i.flatten('/prod/main').mysql == 3.0
+    # assert i.flatten('/prod/main').mysql__source == '/ override:/prod,/prod/main'
+    assert i.flatten('/prod/main').secret == 'password'
+    # assert i.flatten('/prod/main').secret__source == '/'
+    assert i.flatten('/test').mysql == 1.0
+    # assert i.flatten('/test').mysql__source == '/'
+    assert i.flatten('/test').secret == 'plaintext'
+    # assert i.flatten('/test').secret__source == '/ override:/test'
 
 
 @pytest.mark.parametrize('pattern,expected', (
