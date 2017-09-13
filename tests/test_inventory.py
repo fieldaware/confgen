@@ -47,15 +47,13 @@ def test_flatten_inventory(inventory):
 
 @pytest.mark.parametrize('pattern,expected', (
     (
-        'prod',
-        {
+        'prod', {
             '/prod': {'mysql': 2.0},
             '/prod/main': {'mysql': 3.0}
         }
     ),
     (
-        '/.*',
-        {
+        '/.*', {
             '/': {'mysql': 1.0, 'secret': 'password'},
             '/dev/qa1': {'mysql': 4.0},
             '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value'},
@@ -65,8 +63,7 @@ def test_flatten_inventory(inventory):
         }
     ),
     (
-        '/dev/',
-        {
+        '/dev/', {
             '/dev/qa1': {'mysql': 4.0},
             '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value'},
         }
@@ -77,18 +74,9 @@ def test_search_keys(inventory, pattern, expected):
 
 
 @pytest.mark.parametrize('pattern,expected', (
-    (
-        'my_value',
-        {'/dev/qa2': {'new_key': 'my_value'}, }
-    ),
-    (
-        'plaintext',
-        {'/test': {'secret': 'plaintext'}}
-    ),
-    (
-        '1.0',
-        {'/': {'mysql': 1.0, }}
-    ),
+    ('my_value', {'/dev/qa2': {'new_key': 'my_value'}}),
+    ('plaintext', {'/test': {'secret': 'plaintext'}}),
+    ('1.0', {'/': {'mysql': 1.0, }}),
 ))
 def test_search_values(inventory, pattern, expected):
     assert inventory.search_value(pattern) == expected
