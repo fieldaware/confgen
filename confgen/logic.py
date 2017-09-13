@@ -37,18 +37,9 @@ class ConfGen(object):
     def flatten_infra(self):
         return flatten_dict(self.config['infra'])
 
-    def hierarchy_for_path(self, path):
-        if path == "/" or path == "":
-            return {}
-        return dict(zip(self.config['hierarchy'], path.split('/')[1:]))
-
     def merge_config_with_inventory(self):
-        public_inventory = self.inventory.build()
-        merged = {path: copy.deepcopy(self.inventory.inventory_for_path(public_inventory, path)) for path in self.flatten_infra}
-        _global = copy.deepcopy(merged)
-        for path in merged:
-            merged[path][self.hierarchy_key] = self.hierarchy_for_path(path)
-            merged[path][self.global_key] = _global
+        inventory = self.inventory.collect()
+        merged = {path: inventory.flatten(path) for path in self.flatten_infra}
         return merged
 
     def collect(self):

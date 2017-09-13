@@ -81,7 +81,13 @@ class DB(object):
         parts = path.strip('/').split('/')
         node = self._root
         for part in parts:
-            node = node[part]
+            try:
+                node = node[part]
+            # best effor to deliver the path
+            # if the path is not complete stop there.
+            # this might be an ugly shortcut.
+            except KeyError:
+                break
             yield node
 
     def set(self, path, attrs):
