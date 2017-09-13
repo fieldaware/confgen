@@ -46,7 +46,7 @@ class ConfGen(object):
         config_with_inventory = self.merge_config_with_inventory()
         config_with_redered_templates = {}
         for path, services in self.flatten_infra.items():
-            rendered_templates = self.renderer.render_templates_for_services(services, config_with_inventory[path])
+            rendered_templates = self.renderer.render_templates_for_services(services, config_with_inventory[path].all_attrs)
             for template_path, config in rendered_templates.items():
                 config_with_redered_templates['{}/{}'.format(path, template_path)] = config
         return config_with_redered_templates

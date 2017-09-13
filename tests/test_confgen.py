@@ -36,22 +36,22 @@ def test_merge_config_with_inventory(confgen):
 def test_collecting_inventory_plus_temaples(confgen):
     assert confgen.collect() == {
         '/demo/webapp/my.cnf': u'# mysql:/\n# secret:/\nconnurl = 1.0:password',
-        '/demo/webapp/production.ini': u'# stage = demo\n# global_demo_secret = password\n# mysql:/\nmysql = 1.0\n\n# secret:/\npassword = password',
+        '/demo/webapp/production.ini': u'# mysql:/\nmysql = 1.0\n\n# secret:/\npassword = password',
         '/dev/qa1/api/my.cnf': u'# mysql:/ override: /dev/qa1\n# secret:/\nconnurl = 4.0:password',
         '/dev/qa1/webapp/my.cnf': u'# mysql:/ override: /dev/qa1\n# secret:/\nconnurl = 4.0:password',
-        '/dev/qa1/webapp/production.ini': u'# stage = dev\n# global_demo_secret = password\n# mysql:/ override: /dev/qa1\nmysql = 4.0\n\n# secret:/\npassword = password',
-        '/prod/main/api1/api/my.cnf': u'# mysql:/ override: /prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        '/prod/main/multiapp/api/my.cnf': u'# mysql:/ override: /prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        '/prod/main/multiapp/webapp/my.cnf': u'# mysql:/ override: /prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        '/prod/main/multiapp/webapp/production.ini': u'# stage = prod\n# global_demo_secret = password\n# mysql:/ override: /prod,/prod/main\nmysql = 3.0\n\n# secret:/\npassword = password',
-        '/prod/main/webapp1/webapp/my.cnf': u'# mysql:/ override: /prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        '/prod/main/webapp1/webapp/production.ini': u'# stage = prod\n# global_demo_secret = password\n# mysql:/ override: /prod,/prod/main\nmysql = 3.0\n\n# secret:/\npassword = password',
+        '/dev/qa1/webapp/production.ini': u'# mysql:/ override: /dev/qa1\nmysql = 4.0\n\n# secret:/\npassword = password',
+        '/prod/main/api1/api/my.cnf': u'# mysql:/ override: /prod, /prod/main\n# secret:/\nconnurl = 3.0:password',
+        '/prod/main/multiapp/api/my.cnf': u'# mysql:/ override: /prod, /prod/main\n# secret:/\nconnurl = 3.0:password',
+        '/prod/main/multiapp/webapp/my.cnf': u'# mysql:/ override: /prod, /prod/main\n# secret:/\nconnurl = 3.0:password',
+        '/prod/main/multiapp/webapp/production.ini': u'# mysql:/ override: /prod, /prod/main\nmysql = 3.0\n\n# secret:/\npassword = password',
+        '/prod/main/webapp1/webapp/my.cnf': u'# mysql:/ override: /prod, /prod/main\n# secret:/\nconnurl = 3.0:password',
+        '/prod/main/webapp1/webapp/production.ini': u'# mysql:/ override: /prod, /prod/main\nmysql = 3.0\n\n# secret:/\npassword = password',
         '/prod/staging/api/my.cnf': u'# mysql:/ override: /prod\n# secret:/\nconnurl = 2.0:password',
         '/prod/staging/webapp/my.cnf': u'# mysql:/ override: /prod\n# secret:/\nconnurl = 2.0:password',
-        '/prod/staging/webapp/production.ini': u'# stage = prod\n# global_demo_secret = password\n# mysql:/ override: /prod\nmysql = 2.0\n\n# secret:/\npassword = password',
+        '/prod/staging/webapp/production.ini': u'# mysql:/ override: /prod\nmysql = 2.0\n\n# secret:/\npassword = password',
         '/test/api/my.cnf': u'# mysql:/\n# secret:/ override: /test\nconnurl = 1.0:plaintext',
         '/test/webapp/my.cnf': u'# mysql:/\n# secret:/ override: /test\nconnurl = 1.0:plaintext',
-        '/test/webapp/production.ini': u'# stage = test\n# global_demo_secret = password\n# mysql:/\nmysql = 1.0\n\n# secret:/ override: /test\npassword = plaintext'
+        '/test/webapp/production.ini': u'# mysql:/\nmysql = 1.0\n\n# secret:/ override: /test\npassword = plaintext'
     }
 
 
@@ -121,20 +121,20 @@ def test_build(confgen):
     j = lambda x: os.path.join(rootdir, confgen.build_dir, x.strip('/'))
     assert build_files == {
         j('/demo/webapp/my.cnf'): '# mysql:/\n# secret:/\nconnurl = 1.0:password',
-        j('/demo/webapp/production.ini'): '# stage = demo\n# global_demo_secret = password\n# mysql:/\nmysql = 1.0\n\n# secret:/\npassword = password',
+        j('/demo/webapp/production.ini'): '# mysql:/\nmysql = 1.0\n\n# secret:/\npassword = password',
         j('/dev/qa1/api/my.cnf'): '# mysql:/ override: /dev/qa1\n# secret:/\nconnurl = 4.0:password',
         j('/dev/qa1/webapp/my.cnf'): '# mysql:/ override: /dev/qa1\n# secret:/\nconnurl = 4.0:password',
-        j('/dev/qa1/webapp/production.ini'): '# stage = dev\n# global_demo_secret = password\n# mysql:/ override: /dev/qa1\nmysql = 4.0\n\n# secret:/\npassword = password',
-        j('/prod/main/api1/api/my.cnf'): '# mysql:/ override: /prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        j('/prod/main/multiapp/api/my.cnf'): '# mysql:/ override: /prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        j('/prod/main/multiapp/webapp/my.cnf'): '# mysql:/ override: /prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        j('/prod/main/multiapp/webapp/production.ini'): '# stage = prod\n# global_demo_secret = password\n# mysql:/ override: /prod,/prod/main\nmysql = 3.0\n\n# secret:/\npassword = password',
-        j('/prod/main/webapp1/webapp/my.cnf'): '# mysql:/ override: /prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        j('/prod/main/webapp1/webapp/production.ini'): '# stage = prod\n# global_demo_secret = password\n# mysql:/ override: /prod,/prod/main\nmysql = 3.0\n\n# secret:/\npassword = password',
+        j('/dev/qa1/webapp/production.ini'): '# mysql:/ override: /dev/qa1\nmysql = 4.0\n\n# secret:/\npassword = password',
+        j('/prod/main/api1/api/my.cnf'): '# mysql:/ override: /prod, /prod/main\n# secret:/\nconnurl = 3.0:password',
+        j('/prod/main/multiapp/api/my.cnf'): '# mysql:/ override: /prod, /prod/main\n# secret:/\nconnurl = 3.0:password',
+        j('/prod/main/multiapp/webapp/my.cnf'): '# mysql:/ override: /prod, /prod/main\n# secret:/\nconnurl = 3.0:password',
+        j('/prod/main/multiapp/webapp/production.ini'): '# mysql:/ override: /prod, /prod/main\nmysql = 3.0\n\n# secret:/\npassword = password',
+        j('/prod/main/webapp1/webapp/my.cnf'): '# mysql:/ override: /prod, /prod/main\n# secret:/\nconnurl = 3.0:password',
+        j('/prod/main/webapp1/webapp/production.ini'): '# mysql:/ override: /prod, /prod/main\nmysql = 3.0\n\n# secret:/\npassword = password',
         j('/prod/staging/api/my.cnf'): '# mysql:/ override: /prod\n# secret:/\nconnurl = 2.0:password',
         j('/prod/staging/webapp/my.cnf'): '# mysql:/ override: /prod\n# secret:/\nconnurl = 2.0:password',
-        j('/prod/staging/webapp/production.ini'): '# stage = prod\n# global_demo_secret = password\n# mysql:/ override: /prod\nmysql = 2.0\n\n# secret:/\npassword = password',
+        j('/prod/staging/webapp/production.ini'): '# mysql:/ override: /prod\nmysql = 2.0\n\n# secret:/\npassword = password',
         j('/test/api/my.cnf'): '# mysql:/\n# secret:/ override: /test\nconnurl = 1.0:plaintext',
         j('/test/webapp/my.cnf'): '# mysql:/\n# secret:/ override: /test\nconnurl = 1.0:plaintext',
-        j('/test/webapp/production.ini'): '# stage = test\n# global_demo_secret = password\n# mysql:/\nmysql = 1.0\n\n# secret:/ override: /test\npassword = plaintext',
+        j('/test/webapp/production.ini'): '# mysql:/\nmysql = 1.0\n\n# secret:/ override: /test\npassword = plaintext',
     }
