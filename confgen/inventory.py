@@ -16,8 +16,9 @@ def mkdir_p(path):
             raise
 
 class Node(object):
-    def __init__(self, name='', nodes=(), attributes=None):
+    def __init__(self, name="", full_path="", nodes=(), attributes=None):
         self._name = name
+        self.full_path = full_path
         self._nodes = {str(item): item for item in nodes}
         self._attrs = attributes or {}
 
@@ -62,7 +63,16 @@ class Node(object):
 
 class DB(object):
     def __init__(self):
-        self._root = Node(name='/')
+        self._root = Node(name='/', full_path="/")
+
+    def all_nodes(self, node=None):
+        if node is None:
+            node = self._root
+        yield node
+        for child in node:
+            # force generator to yield the childs
+            for i in self.all_nodes(node=child):
+                yield i
 
     def nodes(self, path):
         yield self._root
@@ -80,9 +90,11 @@ class DB(object):
         parts = path.strip('/').split('/')
 
         node = self._root
+        full_path = self._root.full_path
         for part in parts:
             # Get (or create Node)
-            node = node.setdefault(part, Node(name=part))
+            full_path = os.path.join(full_path, part)
+            node = node.setdefault(part, Node(part, full_path=full_path))
 
         # set the attrs on the final node (i.e. the end of path)
         node.update_attrs(attrs)
@@ -91,22 +103,20 @@ class DB(object):
         # return the last node on the path
         return list(self.nodes(path))[-1]
 
-    def flatten(self, path, sources=True):
+    def flatten(self, path):
         attrs = {}
         sources = defaultdict(list)
-        full_path = ""
         for node in self.nodes(path):
-            full_path = os.path.join(full_path, str(node))
             attrs.update(node.all_attrs)
             for overlap in set(attrs.keys()).intersection(set(node.all_attrs)):
-                sources[overlap].append(full_path)
+                sources[overlap].append(node.full_path)
 
         for key, appearnces in sources.items():
             if len(appearnces) == 1:
                 attrs["{}__source".format(key)] = appearnces[0]
             else:
                 attrs["{}__source".format(key)] = "{} override: {}".format(appearnces[0], ", ".join(appearnces[1:]))
-        return Node(name=str(node), attributes=attrs)
+        return Node(name=str(node), full_path=path, attributes=attrs)
 
 class Inventory(object):
     """
@@ -183,22 +193,17 @@ class Inventory(object):
 
     def search_key(self, pattern):
         rgx = re.compile(pattern)
-        inventory = self.build(sources=False)
-        return {k: v for k, v in inventory.items() if rgx.search(k)}
+        all_nodes = self.collect().all_nodes()
+        return {n.full_path: n.all_attrs for n in all_nodes if rgx.search(n.full_path) and n.all_attrs}
 
     def search_value(self, pattern):
         rgx = re.compile(pattern)
-        inventory = self.build(sources=False)
+        all_nodes = {n.full_path: n.all_attrs for n in self.collect().all_nodes() if n.all_attrs}
 
         def search():
-            for path, inventory_entry in inventory.items():
+            for path, inventory_entry in all_nodes.items():
                 for entry_key, entry_value in inventory_entry.items():
                     if rgx.search(entry_key) or rgx.search(str(entry_value)):
                         yield path, {entry_key: entry_value}
 
         return {k: v for (k, v) in search()}
-
-    def build(self, sources=True):
-        inventory = self.collect()
-        inventory.build()
-        return inventory

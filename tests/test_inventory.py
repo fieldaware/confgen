@@ -49,37 +49,26 @@ def test_flatten_inventory(inventory):
     (
         'prod',
         {
-            '/prod': {
-                'mysql': 2.0, 'secret': 'password'
-            },
-            '/prod/main': {
-                'mysql': 3.0, 'secret': 'password'
-            }
+            '/prod': {'mysql': 2.0},
+            '/prod/main': {'mysql': 3.0}
         }
     ),
     (
         '/.*',
         {
             '/': {'mysql': 1.0, 'secret': 'password'},
-            '/dev/qa1': {'mysql': 4.0, 'secret': 'password'},
-            '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value', 'secret': 'password'},
-            '/prod': {'mysql': 2.0, 'secret': 'password'},
-            '/prod/main': {'mysql': 3.0, 'secret': 'password'},
-            '/test': {'mysql': 1.0, 'secret': 'plaintext'}
+            '/dev/qa1': {'mysql': 4.0},
+            '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value'},
+            '/prod': {'mysql': 2.0},
+            '/prod/main': {'mysql': 3.0},
+            '/test': {'secret': 'plaintext'}
         }
     ),
     (
         '/dev/',
         {
-            '/dev/qa1': {
-                'mysql': 4.0,
-                'secret': 'password',
-            },
-            '/dev/qa2': {
-                'mysql': 9.0,
-                'secret': 'password',
-                'new_key': 'my_value',
-            },
+            '/dev/qa1': {'mysql': 4.0},
+            '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value'},
         }
     ),
 ))
@@ -98,11 +87,7 @@ def test_search_keys(inventory, pattern, expected):
     ),
     (
         '1.0',
-        {
-            '/': {'mysql': 1.0, },
-            '/test': {'mysql': 1.0, },
-
-        }
+        {'/': {'mysql': 1.0, }}
     ),
 ))
 def test_search_values(inventory, pattern, expected):
