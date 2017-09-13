@@ -2,7 +2,6 @@ import shutil
 import os
 from os.path import join
 import yaml
-import copy
 import collections
 
 from . import inventory
@@ -23,12 +22,12 @@ def flatten_dict(d, parent_key='', sep='/'):
 class ConfGen(object):
     build_dir = 'build'
     hierarchy_key = "_hierarchy"
-    global_key = "_global"
 
     def __init__(self, home, config):
         self.home = home
         self.config = yaml.load(config)
         assert 'hierarchy' in self.config, "hierarchy list is required"
+        self.config['hierarchy'].insert(0, 'global')
         assert 'service' in self.config, "service list is required"
         self.inventory = inventory.Inventory(home)
         self.renderer = view.Renderer(self.config['service'], home)
@@ -39,14 +38,22 @@ class ConfGen(object):
 
     def merge_config_with_inventory(self):
         inventory = self.inventory.collect()
-        merged = {path: inventory.flatten(path) for path in self.flatten_infra}
+        merged = {path: inventory.flatten(path).all_attrs for path in self.flatten_infra}
+        for path, flatten_node in merged.items():
+            merged[path][self.hierarchy_key] = self.hierarchy_for_node(inventory, path)
         return merged
+
+    def hierarchy_for_node(self, inventory, path):
+        r = {}
+        for hierra_level, node in zip(self.config['hierarchy'], inventory.nodes(path)):
+            r[hierra_level] = node
+        return r
 
     def collect(self):
         config_with_inventory = self.merge_config_with_inventory()
         config_with_redered_templates = {}
         for path, services in self.flatten_infra.items():
-            rendered_templates = self.renderer.render_templates_for_services(services, config_with_inventory[path].all_attrs)
+            rendered_templates = self.renderer.render_templates_for_services(services, config_with_inventory[path])
             for template_path, config in rendered_templates.items():
                 config_with_redered_templates['{}/{}'.format(path, template_path)] = config
         return config_with_redered_templates
