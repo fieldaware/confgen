@@ -101,7 +101,10 @@ class DB(object):
 
     def get(self, path):
         # return the last node on the path
-        return list(self.nodes(path))[-1]
+        try:
+            return list(self.nodes(path))[-1]
+        except KeyError:
+            return
 
     def flatten(self, path):
         attrs = {}
@@ -158,38 +161,36 @@ class Inventory(object):
         """
         Add a value to the inventory and saves results to disk
         """
-        collected = self.collect()
-        if path not in collected:
-            collected[path] = {}
-        collected[path][key] = value
-        self._flush(collected)
+        db = self.collect()
+        db.set(path, {key: value})
+        self._flush(db)
 
     def delete(self, path, key):
         """
         Deletes keys/value pair from the inventory and saves results to disk
         """
-        collected = self.collect()
-        if path not in collected:
+        db = self.collect()
+        item = db.get(path)
+        if not item:
             return
-        if key in collected[path]:
-            collected[path].pop(key)
-        self._flush(collected)
+        attrs = item.all_attrs
+        try:
+            attrs.pop(key)
+        except KeyError:
+            return
+        db.set(path, attrs)
+        self._flush(db)
 
     def _flush(self, inventory):
         """
         Saves given inventory to disk
         """
-        for path, contents in inventory.items():
+        i = {n.full_path: n.all_attrs for n in inventory.all_nodes() if n.all_attrs}
+        for path, contents in i.items():
             dst_dir = join(self.inventory_dir, path.strip('/'))
             mkdir_p(dst_dir)
             with open(join(dst_dir, self.config_filename), 'w+') as f:
                 yaml.safe_dump(contents, f, default_flow_style=False)
-
-    def inventory_for_path(self, inventory, path):
-        for path in reversed(list(self.traverse(path))):
-            candidate = inventory.get(path)
-            if candidate:
-                return candidate
 
     def search_key(self, pattern):
         rgx = re.compile(pattern)

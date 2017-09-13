@@ -1,5 +1,4 @@
 import pytest
-import copy
 
 def assert_collected_inventory(tree):
     assert tree.get('/').mysql == 1.0
@@ -86,43 +85,50 @@ def test_set_new_value_existing_path(inventory):
     inventory.set('/', 'foo', 'bar')
     loaded = inventory.collect()
 
-    expected = copy.deepcopy(collected_inventory)
-    expected['/']['foo'] = 'bar'
-    assert loaded == expected
+    assert_collected_inventory(loaded)
+    assert loaded.get('/').foo == "bar"
 
 def test_set_set_value_new_path(inventory):
     inventory.set('/staging/demo1', 'foo', 'bar')
     loaded = inventory.collect()
 
-    expected = copy.deepcopy(collected_inventory)
-    expected['/staging/demo1'] = {'foo': 'bar'}
-    assert loaded == expected
+    assert_collected_inventory(loaded)
+    assert loaded.get('/staging/demo1').foo == "bar"
+
 
 def test_delete_existing_key(inventory):
     inventory.delete('/', 'secret')
 
-    loaded = inventory.collect()
-    expected = copy.deepcopy(collected_inventory)
-    expected['/'].pop('secret')
-    assert loaded == expected
+    tree = inventory.collect()
+    assert tree.get('/').mysql == 1.0
+    assert tree.get('/prod/main').mysql == 3.0
+    assert tree.get('/dev/qa1').mysql == 4.0
+    assert tree.get('/dev/qa2').mysql == 9.0
+    assert tree.get('/dev/qa2').new_key == 'my_value'
+    assert tree.get('/prod').mysql == 2.0
+    assert tree.get('/test').secret == 'plaintext'
+
 
 def test_delete_last_remaining_key(inventory):
     inventory.delete('/dev/qa1', 'mysql')
 
-    loaded = inventory.collect()
-    expected = copy.deepcopy(collected_inventory)
-    expected['/dev/qa1'] = {}
-    assert loaded == expected
+    tree = inventory.collect()
+    assert tree.get('/').mysql == 1.0
+    assert tree.get('/prod/main').mysql == 3.0
+    assert tree.get('/dev/qa2').mysql == 9.0
+    assert tree.get('/dev/qa2').new_key == 'my_value'
+    assert tree.get('/prod').mysql == 2.0
+    assert tree.get('/test').secret == 'plaintext'
+
 
 def test_delete_non_existing_path(inventory):
     inventory.delete('/dev/qa3', 'mysql')
 
     loaded = inventory.collect()
-    assert loaded == collected_inventory
-
+    assert_collected_inventory(loaded)
 
 def test_delete_non_existing_key(inventory):
     inventory.delete('/dev/qa2', 'psql')
 
     loaded = inventory.collect()
-    assert loaded == collected_inventory
+    assert_collected_inventory(loaded)
