@@ -20,19 +20,19 @@ def test_getttr_empty():
         node['foo']
 
 def test_attr_str():
-    node = Node(attributes={'foo': 'bar'})
+    node = Node(data={'foo': 'bar'})
     assert node.foo == 'bar'
 
 def test_attr_multiple_dict():
-    node = Node(attributes={'foo': 'bar', 'list': [1, 2, 3], 'int': 5})
+    node = Node(data={'foo': 'bar', 'list': [1, 2, 3], 'int': 5})
     assert node.int == 5
     assert node.foo == 'bar'
     assert node.list == [1, 2, 3]
 
 def test_2_level_node():
-    db = Node("root", attributes={'level1': 'root'}, nodes=[
-        Node("leaf1", attributes={'level2': 'foo1'}),
-        Node("leaf2", attributes={'level2': 'foo2'})
+    db = Node("root", data={'level1': 'root'}, children=[
+        Node("leaf1", data={'level2': 'foo1'}),
+        Node("leaf2", data={'level2': 'foo2'})
     ])
 
     assert db.level1 == 'root'

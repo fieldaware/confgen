@@ -16,27 +16,54 @@ def mkdir_p(path):
             raise
 
 class Node(object):
-    def __init__(self, name="", full_path="", nodes=(), attributes=None):
+    """
+        a <Node> for a tree
+        
+        Nodes have a name, children and data (attributes)
+
+        Name is specified in the constructor:
+            node = Node("my_node_name")
+
+        Name is read via:
+            str(node)
+
+        Data is specified in the constructor:
+            node = Node("my_node", data={'my_data_attr', 'my data value'})
+
+        Data is read via attribute access:
+            node.my_data_attr
+
+        Children can be added in the constructor:
+            node = Node("my_node", children=(child_node_1, child_node_2, child_node_N))
+
+        Children can be added via the dict interface:
+            node['my_child_node'] = Node('my_child_node')
+
+        Children can be looked up by their name, in the parent node:
+            child_node = parent_node['child_nodes_name']
+
+    """
+    def __init__(self, name, full_path="", children=(), data=None):
         self._name = name
         self.full_path = full_path
-        self._nodes = {str(item): item for item in nodes}
-        self._attrs = attributes or {}
+        self._children = {str(child): child for child in children}
+        self._data = data or {}
 
     @property
     def has_children(self):
-        return bool(self._nodes)
+        return bool(self._children)
 
     def __setitem__(self, key, value):
-        self._nodes[key] = value
+        self._children[key] = value
 
     def __getitem__(self, key):
-        return self._nodes[key]
+        return self._children[key]
 
     def setdefault(self, key, value):
         try:
-            return self._nodes[key]
+            return self._children[key]
         except KeyError:
-            self._nodes[key] = value
+            self._children[key] = value
         return value
 
     def __str__(self):
@@ -46,18 +73,18 @@ class Node(object):
         return "<Node: {}> {}".format(id(self), self._name)
 
     def __iter__(self):
-        return self._nodes.values().__iter__()
+        return self._children.values().__iter__()
 
-    def update_attrs(self, attrs):
-        self._attrs.update(attrs)
+    def update_data(self, data):
+        self._data.update(data)
 
     @property
-    def all_attrs(self):
-        return self._attrs
+    def data(self):
+        return self._data
 
     def __getattr__(self, name):
         try:
-            return self._attrs[name]
+            return self._data[name]
         except KeyError as e:
             raise AttributeError(e)
 
@@ -92,7 +119,7 @@ class DB(object):
 
     def set(self, path, attrs):
         if path == "/":
-            self._root.update_attrs(attrs)
+            self._root.update_data(attrs)
         parts = path.strip('/').split('/')
 
         node = self._root
@@ -103,7 +130,7 @@ class DB(object):
             node = node.setdefault(part, Node(part, full_path=full_path))
 
         # set the attrs on the final node (i.e. the end of path)
-        node.update_attrs(attrs)
+        node.update_data(attrs)
 
     def get(self, path):
         # return the last node on the path
@@ -116,8 +143,8 @@ class DB(object):
         attrs = {}
         sources = defaultdict(list)
         for node in self.nodes(path):
-            attrs.update(node.all_attrs)
-            for overlap in set(attrs.keys()).intersection(set(node.all_attrs)):
+            attrs.update(node.data)
+            for overlap in set(attrs.keys()).intersection(set(node.data)):
                 sources[overlap].append(node.full_path)
 
         for key, appearnces in sources.items():
@@ -125,7 +152,7 @@ class DB(object):
                 attrs["{}__source".format(key)] = appearnces[0]
             else:
                 attrs["{}__source".format(key)] = "{} override: {}".format(appearnces[0], ", ".join(appearnces[1:]))
-        return Node(name=str(node), full_path=path, attributes=attrs)
+        return Node(name=str(node), full_path=path, data=attrs)
 
 class Inventory(object):
     """
@@ -179,7 +206,7 @@ class Inventory(object):
         item = db.get(path)
         if not item:
             return
-        attrs = item.all_attrs
+        attrs = item.data
         try:
             attrs.pop(key)
         except KeyError:
@@ -191,7 +218,7 @@ class Inventory(object):
         """
         Saves given inventory to disk
         """
-        i = {n.full_path: n.all_attrs for n in inventory.all_nodes() if n.all_attrs}
+        i = {n.full_path: n.data for n in inventory.all_nodes() if n.data}
         for path, contents in i.items():
             dst_dir = join(self.inventory_dir, path.strip('/'))
             mkdir_p(dst_dir)
@@ -201,11 +228,11 @@ class Inventory(object):
     def search_key(self, pattern):
         rgx = re.compile(pattern)
         all_nodes = self.collect().all_nodes()
-        return {n.full_path: n.all_attrs for n in all_nodes if rgx.search(n.full_path) and n.all_attrs}
+        return {n.full_path: n.data for n in all_nodes if rgx.search(n.full_path) and n.data}
 
     def search_value(self, pattern):
         rgx = re.compile(pattern)
-        all_nodes = {n.full_path: n.all_attrs for n in self.collect().all_nodes() if n.all_attrs}
+        all_nodes = {n.full_path: n.data for n in self.collect().all_nodes() if n.data}
 
         def search():
             for path, inventory_entry in all_nodes.items():

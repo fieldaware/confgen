@@ -38,7 +38,7 @@ class ConfGen(object):
 
     def merge_config_with_inventory(self):
         inventory = self.inventory.collect()
-        merged = {path: inventory.flatten(path).all_attrs for path in self.flatten_infra}
+        merged = {path: inventory.flatten(path).data for path in self.flatten_infra}
         for path, flatten_node in merged.items():
             merged[path][self.hierarchy_key] = self.hierarchy_for_node(inventory, path)
         return merged
