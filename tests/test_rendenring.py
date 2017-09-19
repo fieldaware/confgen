@@ -46,7 +46,7 @@ def test_render_templates_for_multiple_service_and_inventory(renderer, confgen):
 def test_render_template_with_undefined_key(renderer, confgen):
     built_inventory = confgen.merge_config_with_inventory()
 
-    built_inventory['/prod/main/webapp1'].pop('secret')  # remove required key to render
+    built_inventory['/prod/main/webapp1'].data.pop('secret')  # remove required key to render
 
     with pytest.raises(SystemExit):
         renderer.render_templates_for_service('webapp', built_inventory['/prod/main/webapp1'])

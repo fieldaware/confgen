@@ -40,7 +40,7 @@ class Renderer(object):
         for template in templates[service]:
             try:
                 renders[template] = (self.jinja_environ.get_template(template)
-                                     .render(template_inventory or {}))
+                                     .render(template_inventory.data or {}))
             except exceptions.UndefinedError as e:
                 log.error("while rendering: {} ({})".format(template, e.message))
                 sys.exit(1)

@@ -20,11 +20,11 @@ def test_getttr_empty():
         node['foo']
 
 def test_attr_str():
-    node = Node(data={'foo': 'bar'})
+    node = Node("foo", data={'foo': 'bar'})
     assert node.foo == 'bar'
 
 def test_attr_multiple_dict():
-    node = Node(data={'foo': 'bar', 'list': [1, 2, 3], 'int': 5})
+    node = Node("foo", data={'foo': 'bar', 'list': [1, 2, 3], 'int': 5})
     assert node.int == 5
     assert node.foo == 'bar'
     assert node.list == [1, 2, 3]
