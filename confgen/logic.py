@@ -38,13 +38,14 @@ class ConfGen(object):
         inventory = self.inventory.collect()
         merged = {path: inventory.flatten(path) for path in self.flatten_infra}
         for path, flatten_node in merged.items():
-            self.hierarchy_for_node(inventory, path, merged[path])
+            for hierra_level, node in zip(self.config['hierarchy'], inventory.nodes(path)):
+                flatten_node[hierra_level] = node
+        import pudb; pudb.set_trace()
         return merged
 
     def hierarchy_for_node(self, inventory, path, node):
         for hierra_level, node in zip(self.config['hierarchy'], inventory.nodes(path)):
             node[hierra_level] = node
-            print node._children
 
     def collect(self):
         config_with_inventory = self.merge_config_with_inventory()

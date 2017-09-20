@@ -6,7 +6,7 @@ hierarchy:
   - INFRA
   - STAGE
   - CLUSTER
-  - SERVER
+  - SERVICE
 
 infra:
   prod:
