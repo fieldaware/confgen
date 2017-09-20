@@ -1,2 +1,3 @@
 pytest==2.9.1
+pdbpp
 pytest-cov==2.4.0

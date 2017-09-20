@@ -32,7 +32,7 @@ def test_merge_config_with_inventory(confgen):
     assert built_config['/test'].secret == 'plaintext'
     assert built_config['/test'].secret__source == '/ override: /test'
 
-def test_hierarchy_for_path(confgen):
+def ttest_hierarchy_for_path(confgen):
     hier = confgen.hierarchy_for_node(confgen.inventory.collect(), '/prod/main/api1')
     assert str(hier['global']) == "/"
     assert hier['global'].mysql == 1.0

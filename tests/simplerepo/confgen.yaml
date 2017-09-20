@@ -3,9 +3,10 @@ service: &services
   - api
 
 hierarchy:
-  - stage
-  - cluster
-  - server
+  - INFRA
+  - STAGE
+  - CLUSTER
+  - SERVER
 
 infra:
   prod:

@@ -21,13 +21,11 @@ def flatten_dict(d, parent_key='', sep='/'):
 
 class ConfGen(object):
     build_dir = 'build'
-    hierarchy_key = "_hierarchy"
 
     def __init__(self, home, config):
         self.home = home
         self.config = yaml.load(config)
         assert 'hierarchy' in self.config, "hierarchy list is required"
-        self.config['hierarchy'].insert(0, 'global')
         assert 'service' in self.config, "service list is required"
         self.inventory = inventory.Inventory(home)
         self.renderer = view.Renderer(self.config['service'], home)
@@ -40,14 +38,13 @@ class ConfGen(object):
         inventory = self.inventory.collect()
         merged = {path: inventory.flatten(path) for path in self.flatten_infra}
         for path, flatten_node in merged.items():
-            merged[path][self.hierarchy_key] = self.hierarchy_for_node(inventory, path)
+            self.hierarchy_for_node(inventory, path, merged[path])
         return merged
 
-    def hierarchy_for_node(self, inventory, path):
-        r = {}
+    def hierarchy_for_node(self, inventory, path, node):
         for hierra_level, node in zip(self.config['hierarchy'], inventory.nodes(path)):
-            r[hierra_level] = node
-        return r
+            node[hierra_level] = node
+            print node._children
 
     def collect(self):
         config_with_inventory = self.merge_config_with_inventory()

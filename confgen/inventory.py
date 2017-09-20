@@ -18,7 +18,7 @@ def mkdir_p(path):
 class Node(object):
     """
         a <Node> for a tree
-        
+
         Nodes have a name, children and data (attributes)
 
         Name is specified in the constructor:
