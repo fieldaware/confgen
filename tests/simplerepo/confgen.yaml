@@ -3,23 +3,22 @@ service: &services
   - api
 
 hierarchy:
-  - INFRA
+  - GLOBAL
   - STAGE
   - CLUSTER
   - SERVICE
 
 infra:
-  prod:
-    main:
-      webapp1:
-        - webapp
-      api1:
-        - api
-      multiapp: *services
-    staging: *services
+  prod: # stage
+    main: # cluster
+      - webapp # service
+    multiapp: # cluster
+      *services # service
+    staging:  # cluster
+      *services # service
 
-  dev:
-    qa1: *services
-  test: *services
-  demo:
-    - webapp
+  dev: # stage
+    qa1: # cluster
+      *services # service
+    qa2: # cluster
+      *services # service

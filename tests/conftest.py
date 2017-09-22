@@ -37,7 +37,7 @@ def inventory(simplerepo):
 
 @pytest.fixture
 def renderer(confgenyaml, inventory, simplerepo):
-    return Renderer(confgenyaml['service'], home=simplerepo)
+    return Renderer(home=simplerepo)
 
 
 @pytest.fixture

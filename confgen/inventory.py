@@ -14,146 +14,22 @@ def mkdir_p(path):
     except OSError as exc:  # Python >2.5
         if not exc.errno == errno.EEXIST:
             raise
-
-class Node(object):
-    """
-        a <Node> for a tree
-
-        Nodes have a name, children and data (attributes)
-
-        Name is specified in the constructor:
-            node = Node("my_node_name")
-
-        Name is read via:
-            str(node)
-
-        Data is specified in the constructor:
-            node = Node("my_node", data={'my_data_attr', 'my data value'})
-
-        Data is read via attribute access:
-            node.my_data_attr
-
-        Children can be added in the constructor:
-            node = Node("my_node", children=(child_node_1, child_node_2, child_node_N))
-
-        Children can be added via the dict interface:
-            node['my_child_node'] = Node('my_child_node')
-
-        Children can be looked up by their name, in the parent node:
-            child_node = parent_node['child_nodes_name']
-
-    """
-    def __init__(self, name, full_path="", children=(), data=None):
-        self._name = name
-        self.full_path = full_path
-        self._children = {str(child): child for child in children}
-        self._data = data or {}
-
-    @property
-    def has_children(self):
-        return bool(self._children)
-
-    def __setitem__(self, key, value):
-        self._children[key] = value
-
-    def __getitem__(self, key):
-        return self._children[key]
-
-    def setdefault(self, key, value):
-        try:
-            return self._children[key]
-        except KeyError:
-            self._children[key] = value
-        return value
-
-    def __str__(self):
-        return self._name
-
-    def __repr__(self):
-        return "<Node: {}> {}".format(id(self), self._name)
-
-    def __iter__(self):
-        return self._children.values().__iter__()
-
-    def update_data(self, data):
-        self._data.update(data)
-
-    @property
-    def data(self):
-        return self._data
-
-    def __getattr__(self, name):
-        try:
-            return self._data[name]
-        except KeyError as e:
-            raise AttributeError(e)
-
-class DB(object):
-    def __init__(self):
-        self._root = Node(name='/', full_path="/")
-
-    def all_nodes(self, node=None):
-        if node is None:
-            node = self._root
-        yield node
-        for child in node:
-            # force generator to yield the childs
-            for i in self.all_nodes(node=child):
-                yield i
-
-    def nodes(self, path):
-        yield self._root
-        if path == "/":
-            raise StopIteration
-        parts = path.strip('/').split('/')
-        node = self._root
-        for part in parts:
-            try:
-                node = node[part]
-            # best effor to deliver the path
-            # if the path is not complete stop there.
-            # this might be an ugly shortcut.
-            except KeyError:
-                break
-            yield node
-
-    def set(self, path, attrs):
-        if path == "/":
-            self._root.update_data(attrs)
-        parts = path.strip('/').split('/')
-
-        node = self._root
-        full_path = self._root.full_path
-        for part in parts:
-            # Get (or create Node)
-            full_path = os.path.join(full_path, part)
-            node = node.setdefault(part, Node(part, full_path=full_path))
-
-        # set the attrs on the final node (i.e. the end of path)
-        node.update_data(attrs)
-
-    def get(self, path):
-        # return the last node on the path
-        try:
-            return list(self.nodes(path))[-1]
-        except KeyError:
-            return
-
-    def flatten(self, path):
-        attrs = {}
-        sources = defaultdict(list)
-        for node in self.nodes(path):
-            attrs.update(node.data)
-            for overlap in set(attrs.keys()).intersection(set(node.data)):
-                sources[overlap].append(node.full_path)
-
-        for key, appearnces in sources.items():
-            if len(appearnces) == 1:
-                attrs["{}__source".format(key)] = appearnces[0]
-            else:
-                attrs["{}__source".format(key)] = "{} override: {}".format(appearnces[0], ", ".join(appearnces[1:]))
-        return Node(name=str(node), full_path=path, data=attrs)
-
+            
+    # def flatten(self, path):
+    #     attrs = {}
+    #     sources = defaultdict(list)
+    #     for node in self.nodes(path):
+    #         attrs.update(node.data)
+    #         for overlap in set(attrs.keys()).intersection(set(node.data)):
+    #             sources[overlap].append(node.full_path)
+    #
+    #     for key, appearnces in sources.items():
+    #         if len(appearnces) == 1:
+    #             attrs["{}__source".format(key)] = appearnces[0]
+    #         else:
+    #             attrs["{}__source".format(key)] = "{} override: {}".format(appearnces[0], ", ".join(appearnces[1:]))
+    #     return Node(name=str(node), full_path=path, data=attrs)
+    #
 class Inventory(object):
     """
     Represents, builds and saves the invetory.
@@ -174,21 +50,22 @@ class Inventory(object):
         """
         Takes absolute path in inventory and parses it relative
         """
-        relative_path = path[len(self.inventory_dir):]  # strip absolute path
-        if relative_path == '':  # set root path as '/'
-            return '/'
-        return relative_path
+        return [i for i in path[len(self.inventory_dir) + 1:].split('/') if i]
 
-    def collect(self):
+    def collect(self, tree):
         """
         Walks to home dir and collects yaml files
         """
-        db = DB()
         for path, dirs, files in os.walk(self.inventory_dir):
             if files:
                 configyml = yaml.load(open(join(path, self.config_filename)))
-                db.set(self._parse_file_path(path), configyml)
-        return db
+                try:
+                    tree.by_path(self._parse_file_path(path)).inventory = configyml
+                except KeyError:
+                    # something in the inventory that doesn't make sense
+                    # a path that doesn't exist in the infra tree but is present
+                    # in the inventory
+                    pass
 
     def set(self, path, key, value):
         """
