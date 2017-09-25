@@ -1,13 +1,13 @@
 import pytest
 
 def assert_collected_inventory(tree):
-    assert tree['mysql'] == 1.0
-    assert tree['secret'] == 'password'
+    assert tree.inventory['mysql'] == 1.0
+    assert tree.inventory['secret'] == 'password'
     assert tree['prod']['main'].inventory['mysql'] == 3.0
     assert tree['dev']['qa1'].inventory['mysql'] == 4.0
     assert tree['dev']['qa2'].inventory['mysql'] == 9.0
     assert tree['dev']['qa2'].inventory['new_key'] == 'my_value'
-    assert tree['prod']['mysql'] == 2.0
+    assert tree['prod'].inventory['mysql'] == 2.0
 
 def test_collectg_inventory(inventory, confgen):
     inventory.collect(confgen.root)
@@ -16,28 +16,27 @@ def test_collectg_inventory(inventory, confgen):
 def test_flatten_data_tree(inventory, confgen):
     t = confgen.root
     inventory.collect(t)
-
-    assert t['mysql'] == 1.0
+    assert t.as_dict['mysql'] == 1.0
     #assert t['mysql__source'] == '/'
-    assert t['secret'] == 'password'
+    assert t.as_dict['secret'] == 'password'
     #assert t['secret__source'] == '/'
-    assert t['dev']['qa1']['mysql'] == 4.0
+    assert t['dev']['qa1'].as_dict['mysql'] == 4.0
     #assert t['dev']['qa1']['mysql__source'] == '/ override: /dev/qa1'
-    assert t['dev']['qa1']['secret'] == 'password'
+    assert t['dev']['qa1'].as_dict['secret'] == 'password'
     #assert t['dev']['qa1']['secret__source'] == '/'
-    assert t['dev']['qa2']['mysql'] == 9.0
+    assert t['dev']['qa2'].as_dict['mysql'] == 9.0
     #assert t['dev']['qa2']['mysql__source'] == '/ override: /dev/qa2'
-    assert t['dev']['qa2']['secret'] == 'password'
+    assert t['dev']['qa2'].as_dict['secret'] == 'password'
     #assert t['dev']['qa2']['secret__source'] == '/'
-    assert t['dev']['qa2']['new_key'] == 'my_value'
+    assert t['dev']['qa2'].as_dict['new_key'] == 'my_value'
     #assert t['dev']['qa2']['new_key__source'] == '/dev/qa2'
-    assert t['prod']['mysql'] == 2.0
+    assert t['prod'].as_dict['mysql'] == 2.0
     #assert t['prod']['mysql__source'] == '/ override: /prod'
-    assert t['prod']['secret'] == 'password'
+    assert t['prod'].as_dict['secret'] == 'password'
     #assert t['prod']['secret__source'] == '/'
-    assert t['prod']['main']['mysql'] == 3.0
+    assert t['prod']['main'].as_dict['mysql'] == 3.0
     #assert t['prod']['main']['mysql__source'] == '/ override: /prod, /prod/main'
-    assert t['prod']['main']['secret'] == 'password'
+    assert t['prod']['main'].as_dict['secret'] == 'password'
     #assert t['prod']['main']['secret__source'] == '/'
 
 

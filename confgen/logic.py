@@ -18,40 +18,34 @@ class Node(MutableMapping):
         self.children = dict()
         self.inventory = dict()
 
+    def up(self):
+        node = self
+        while node is not None:  # root's parent is None.
+            yield node
+            node = node.parent
+
     @property
     def path(self):
-        def up(node, acc=None):
-            acc = acc or []
-            acc.insert(0, str(node))
-            if node.parent:
-                return up(node.parent, acc)
-            return acc
-
-        return "/".join(up(self))
+        return "/".join(reversed([str(i) for i in self.up()]))
 
     @property
-    def is_child(self):
+    def has_children(self):
         return bool(self.children)
 
     def by_path(self, parts):
-        return reduce(operator.getitem, parts, self)
+        return reduce(operator.getitem, parts, self.root)
 
-    def find_source(self, key):
-        def up(node):
-            if node is None:
-                raise KeyError("Key: {} not found in the tree")
-            if node.inventory.get(key):
-                return node.path
-            else:
-                return up(node.parent)
-        return up(self)
+    @property
+    def flatten(self):
+        def merge_dicts(x, y):
+            '''
+            if I only had python3.5 {**x, **y} :<
+            '''
+            c = y.inventory.copy()
+            c.update(x)
+            return c
 
-    def flatten(self, key):
-        def up(node):
-            if node is None:
-                raise KeyError("Key: {} not found in the tree")
-            return node.inventory.get(key) or up(node.parent)
-        return up(self)
+        return reduce(merge_dicts, self.up(), self.inventory)
 
     def __repr__(self):
         return "Node <{}>: {}".format(id(self), self.name)
@@ -60,12 +54,7 @@ class Node(MutableMapping):
         return self.name
 
     def __getitem__(self, key):
-        # FIXME
-        # self.children.get(key, self.inventory[key]) doesnt work ;x
-        try:
-            return self.children[key]
-        except KeyError:
-            return self.flatten(key)
+        return self.children[key]
 
     def __setitem__(self, key, value):
         self.children[key] = value
@@ -80,35 +69,9 @@ class Node(MutableMapping):
         raise ValueError("Deletion not allowed")
 
     @property
-    def leafs(self):
-        acc = []
-        def down(node):
-            if not node.is_child:
-                acc.append(node)
-            else:
-                for c in node:
-                    down(c)
-        down(self)
-        return acc
-
-    @property
     def as_dict(self):
-        def up(node, acc=None):
-            acc = acc or []
-            acc.insert(0, node)
-            if node.parent:
-                return up(node.parent, acc)
-            return acc
-
-        def down(node, path, acc=None):
-            acc = acc or {}
-            acc.update(node.inventory)
-            if node.get(path[0]):
-                return down(node.get(path[0]), path[1:], acc)
-            return acc
-
-        stages = {s.level: s for s in up(self)}
-        stages.update(down(self.root, self.path.split('/')))
+        stages = {i.level: i for i in self.up()}
+        stages.update(self.flatten)
         return stages
 
 class ConfGen(object):
@@ -140,13 +103,6 @@ class ConfGen(object):
         for k in infra:
             add_node(infra[k], k, 1, root)
         return root
-
-
-    def add_inventory(self):
-        pass
-
-    def add_templates(self):
-        pass
 
     def collect(self):
         '''

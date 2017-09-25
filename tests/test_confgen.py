@@ -88,15 +88,15 @@ def test_confgen_tree_by_path(confgen):
     assert confgen.root.by_path(('dev', 'qa1', 'webapp')) is confgen.root['dev']['qa1']['webapp']
 
 
-def test_confgen_tree_leafs(confgen):
-    assert set([i.path for i in confgen.root.leafs]) == {
-        'infra/prod/main/webapp',
-        'infra/prod/multiapp/webapp',
-        'infra/prod/multiapp/api',
-        'infra/prod/staging/webapp',
-        'infra/prod/staging/api',
-        'infra/dev/qa1/webapp',
-        'infra/dev/qa1/api',
-        'infra/dev/qa2/webapp',
-        'infra/dev/qa2/api',
-    }
+# def test_confgen_tree_leafs(confgen):
+#     assert set([i.path for i in confgen.root.leafs]) == {
+#         'infra/prod/main/webapp',
+#         'infra/prod/multiapp/webapp',
+#         'infra/prod/multiapp/api',
+#         'infra/prod/staging/webapp',
+#         'infra/prod/staging/api',
+#         'infra/dev/qa1/webapp',
+#         'infra/dev/qa1/api',
+#         'infra/dev/qa2/webapp',
+#         'infra/dev/qa2/api',
+#     }

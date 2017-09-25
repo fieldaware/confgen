@@ -4,7 +4,7 @@ import pytest
     (
         ('prod', 'main', 'webapp'), {
             'my.cnf': u"infra prod main webapp",
-            'production.ini': u"1.0 password main multiapp staging"
+            'production.ini': u"3.0 password main multiapp staging"
         }
     ),
     (
@@ -15,7 +15,7 @@ import pytest
     (
         ('dev', 'qa1', 'webapp'), {
             'my.cnf': u"infra dev qa1 webapp",
-            'production.ini': u"1.0 password qa1 qa2"
+            'production.ini': u"4.0 password qa1 qa2"
         }
     ),
     (
