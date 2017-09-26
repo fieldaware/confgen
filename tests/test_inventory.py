@@ -10,11 +10,9 @@ def assert_collected_inventory(tree):
     assert tree['prod'].inventory['mysql'] == 2.0
 
 def test_collectg_inventory(inventory):
-    inventory.collect()
     assert_collected_inventory(inventory._tree)
 
 def test_flatten_data_tree(inventory, confgen):
-    inventory.collect()
     t = inventory._tree
     assert t.as_dict['mysql'] == 1.0
     #assert t['mysql__source'] == '/'
@@ -40,43 +38,38 @@ def test_flatten_data_tree(inventory, confgen):
     #assert t['prod']['main']['secret__source'] == '/'
 
 
-# @pytest.mark.parametrize('pattern,expected', (
-#     (
-#         'prod', {
-#             '/prod': {'mysql': 2.0},
-#             '/prod/main': {'mysql': 3.0}
-#         }
-#     ),
-#     (
-#         '/.*', {
-#             '/': {'mysql': 1.0, 'secret': 'password'},
-#             '/dev/qa1': {'mysql': 4.0},
-#             '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value'},
-#             '/prod': {'mysql': 2.0},
-#             '/prod/main': {'mysql': 3.0},
-#             '/test': {'secret': 'plaintext'}
-#         }
-#     ),
-#     (
-#         '/dev/', {
-#             '/dev/qa1': {'mysql': 4.0},
-#             '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value'},
-#         }
-#     ),
-# ))
-# def test_search_keys(inventory, pattern, expected):
-#     assert inventory.search_key(pattern) == expected
-#
-#
-# @pytest.mark.parametrize('pattern,expected', (
-#     ('my_value', {'/dev/qa2': {'new_key': 'my_value'}}),
-#     ('plaintext', {'/test': {'secret': 'plaintext'}}),
-#     ('1.0', {'/': {'mysql': 1.0, }}),
-# ))
-# def test_search_values(inventory, pattern, expected):
-#     assert inventory.search_value(pattern) == expected
-#
-#
+@pytest.mark.parametrize('pattern,expected', (
+    (
+        'prod', {'infra/prod', 'infra/prod/main'}
+    ),
+    (
+        '/.*', {'infra/dev/qa1', 'infra/dev/qa2', 'infra/prod', 'infra/prod/main'}
+    ),
+    (
+        '.*', {
+            'infra',
+            'infra/dev/qa1',
+            'infra/dev/qa2',
+            'infra/prod',
+            'infra/prod/main',
+        }
+    ),
+    (
+        '/dev/', {'infra/dev/qa1', 'infra/dev/qa2'}
+    ),
+))
+def test_search_keys(inventory, pattern, expected):
+    assert {i.path for i in inventory.search_key(pattern)} == expected
+
+
+@pytest.mark.parametrize('pattern,expected', (
+    ('my_value', {'infra/dev/qa2'}),
+    ('1.0', {'infra', }),
+    ('mysql', {'infra', 'infra/prod', 'infra/prod/main', 'infra/dev/qa1', 'infra/dev/qa2'}),
+))
+def test_search_values(inventory, pattern, expected):
+    assert {i.path for i in inventory.search_value(pattern)} == expected
+
 # def test_set_new_value_existing_path(inventory):
 #     inventory.set('/', 'foo', 'bar')
 #     loaded = inventory.collect()

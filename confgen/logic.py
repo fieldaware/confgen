@@ -18,6 +18,16 @@ class Node(MutableMapping):
         self.children = dict()
         self.inventory = dict()
 
+    def all(self):
+        # XXX: my spider senses are saying this could be implemented better
+        yield self.root
+        pending = [self.root, ]
+        while pending:
+            for child in pending.pop(0):
+                yield child
+                if child.has_children:
+                    pending.append(child)
+
     def up(self):
         node = self
         while node is not None:  # root's parent is None.
@@ -26,15 +36,7 @@ class Node(MutableMapping):
 
     @property
     def services(self):
-        # XXX: refactor me please.
-        def scan(node):
-            if not node.has_children:
-                yield node
-            else:
-                for child in node:
-                    for i in scan(child):
-                        yield i
-        return [i for i in scan(self.root)]
+        return [i for i in self.all() if not i.has_children]
 
     @property
     def path(self):

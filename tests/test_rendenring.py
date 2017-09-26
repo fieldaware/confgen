@@ -26,5 +26,4 @@ import pytest
 
 ))
 def test_render_service(confgen, renderer, path, expected):
-    confgen.inventory.collect()
     assert renderer.service(confgen.root.by_path(path)) == expected

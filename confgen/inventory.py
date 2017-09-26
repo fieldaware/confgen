@@ -44,6 +44,7 @@ class Inventory(object):
         self.home = home
         self.inventory_dir = join(home, 'inventory')
         self._tree = tree
+        self.__collect()
 
     def _parse_file_path(self, path):
         """
@@ -51,7 +52,7 @@ class Inventory(object):
         """
         return [i for i in path[len(self.inventory_dir) + 1:].split('/') if i]
 
-    def collect(self):
+    def __collect(self):
         """
         Walks to home dir and collects yaml files
         """
@@ -103,17 +104,14 @@ class Inventory(object):
 
     def search_key(self, pattern):
         rgx = re.compile(pattern)
-        all_nodes = self.collect().all_nodes()
-        return {n.full_path: n.data for n in all_nodes if rgx.search(n.full_path) and n.data}
+        return [n for n in self._tree.all() if rgx.search(n.path) and n.inventory]
 
     def search_value(self, pattern):
         rgx = re.compile(pattern)
-        all_nodes = {n.full_path: n.data for n in self.collect().all_nodes() if n.data}
 
-        def search():
-            for path, inventory_entry in all_nodes.items():
-                for entry_key, entry_value in inventory_entry.items():
-                    if rgx.search(entry_key) or rgx.search(str(entry_value)):
-                        yield path, {entry_key: entry_value}
+        def lookup(n):
+            for k, v in n.inventory.items():
+                if rgx.search(k) or rgx.search(str(v)):  # v might be int or float
+                    return n
 
-        return {k: v for (k, v) in search()}
+        return [i for i in self._tree.all() if lookup(i)]
