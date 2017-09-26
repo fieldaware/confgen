@@ -3,8 +3,6 @@ import errno
 import os
 from os.path import join
 
-from collections import defaultdict
-
 import yaml
 
 
@@ -14,7 +12,7 @@ def mkdir_p(path):
     except OSError as exc:  # Python >2.5
         if not exc.errno == errno.EEXIST:
             raise
-            
+
     # def flatten(self, path):
     #     attrs = {}
     #     sources = defaultdict(list)
@@ -42,9 +40,10 @@ class Inventory(object):
     config_filename = 'config.yaml'
     source_key_pattern = '{key}__source'
 
-    def __init__(self, home=None):
+    def __init__(self, tree, home=None):
         self.home = home
         self.inventory_dir = join(home, 'inventory')
+        self._tree = tree
 
     def _parse_file_path(self, path):
         """
@@ -52,7 +51,7 @@ class Inventory(object):
         """
         return [i for i in path[len(self.inventory_dir) + 1:].split('/') if i]
 
-    def collect(self, tree):
+    def collect(self):
         """
         Walks to home dir and collects yaml files
         """
@@ -60,7 +59,7 @@ class Inventory(object):
             if files:
                 configyml = yaml.load(open(join(path, self.config_filename)))
                 try:
-                    tree.by_path(self._parse_file_path(path)).inventory = configyml
+                    self._tree.by_path(self._parse_file_path(path)).inventory = configyml
                 except KeyError:
                     # something in the inventory that doesn't make sense
                     # a path that doesn't exist in the infra tree but is present

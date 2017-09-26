@@ -20,11 +20,11 @@ class Renderer(object):
             undefined=StrictUndefined
         )
 
-    def service(self, leaf):
-        templates_path = join(self.home, self.templates_dir, leaf.name)
+    def service(self, node):
+        templates_path = join(self.home, self.templates_dir, node.name)
         rendered = {}
         for template in (i for i in os.listdir(templates_path) if isfile(join(templates_path, i))):
-            rendered[template] = self.render_template(join(leaf.name, template), leaf)
+            rendered[template] = self.render_template(join(node.name, template), node)
         return rendered
 
     def render_template(self, path, inventory):

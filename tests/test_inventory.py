@@ -9,13 +9,13 @@ def assert_collected_inventory(tree):
     assert tree['dev']['qa2'].inventory['new_key'] == 'my_value'
     assert tree['prod'].inventory['mysql'] == 2.0
 
-def test_collectg_inventory(inventory, confgen):
-    inventory.collect(confgen.root)
-    assert_collected_inventory(confgen.root)
+def test_collectg_inventory(inventory):
+    inventory.collect()
+    assert_collected_inventory(inventory._tree)
 
 def test_flatten_data_tree(inventory, confgen):
-    t = confgen.root
-    inventory.collect(t)
+    inventory.collect()
+    t = inventory._tree
     assert t.as_dict['mysql'] == 1.0
     #assert t['mysql__source'] == '/'
     assert t.as_dict['secret'] == 'password'

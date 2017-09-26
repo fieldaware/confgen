@@ -25,6 +25,18 @@ class Node(MutableMapping):
             node = node.parent
 
     @property
+    def services(self):
+        # XXX: refactor me please.
+        def scan(node):
+            if not node.has_children:
+                yield node
+            else:
+                for child in node:
+                    for i in scan(child):
+                        yield i
+        return [i for i in scan(self.root)]
+
+    @property
     def path(self):
         return "/".join(reversed([str(i) for i in self.up()]))
 
@@ -84,7 +96,7 @@ class ConfGen(object):
         assert 'service' in self.config, "service list is required"
         assert 'infra' in self.config, "infra tree is required"
         self.root = self.build_tree(self.config['infra'])
-        self.inventory = inventory.Inventory(home)
+        self.inventory = inventory.Inventory(self.root, home)
         self.renderer = view.Renderer(home)
 
     def build_tree(self, infra):
