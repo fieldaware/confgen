@@ -1,3 +1,5 @@
+import pytest
+
 def test_confgen_tree_build(confgen):
     '''
     Based on:
@@ -82,10 +84,19 @@ def test_confgen_tree_path(confgen):
     assert confgen.root['dev']['qa1'].path == "infra/dev/qa1"
     assert confgen.root.path == "infra"
 
+@pytest.mark.parametrize('path,expected', (
+    ('', []),
+    ('infra', []),
+    ('infra/prod', ['prod']),
+    ('infra/prod/main/webapp', ['prod', 'main', 'webapp'])
+))
+def test_path_to_list(confgen, path, expected):
+    assert confgen.root.path_to_list(path) == expected
+
 def test_confgen_tree_by_path(confgen):
-    assert confgen.root.by_path([]) is confgen.root
-    assert confgen.root.by_path(('dev', 'qa1')) is confgen.root['dev']['qa1']
-    assert confgen.root.by_path(('dev', 'qa1', 'webapp')) is confgen.root['dev']['qa1']['webapp']
+    assert confgen.root.by_path("infra") is confgen.root
+    assert confgen.root.by_path("infra/dev/qa1") is confgen.root['dev']['qa1']
+    assert confgen.root.by_path('infra/dev/qa1/webapp') is confgen.root['dev']['qa1']['webapp']
 
 
 def test_confgen_tree_leafs(confgen):

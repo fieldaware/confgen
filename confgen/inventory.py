@@ -50,7 +50,7 @@ class Inventory(object):
         """
         Takes absolute path in inventory and parses it relative
         """
-        return [i for i in path[len(self.inventory_dir) + 1:].split('/') if i]
+        return path[len(self.inventory_dir) + 1:]
 
     def __collect(self):
         """
@@ -71,30 +71,25 @@ class Inventory(object):
         """
         Add a value to the inventory and saves results to disk
         """
-        db = self.collect()
-        db.set(path, {key: value})
-        self._flush(db)
+        self._tree.by_path(path).inventory[key] = value
+        self._flush()
 
     def delete(self, path, key):
         """
         Deletes keys/value pair from the inventory and saves results to disk
         """
-        db = self.collect()
-        item = db.get(path)
-        if not item:
-            return
-        attrs = item.data
         try:
-            attrs.pop(key)
-        except KeyError:
+            deleted = self._tree.by_path(path).inventory.pop(key)
+        except KeyError:  # node or key cannot be found
             return
-        db.set(path, attrs)
-        self._flush(db)
+        self._flush()
+        return deleted
 
-    def _flush(self, inventory):
+    def _flush(self):
         """
         Saves given inventory to disk
         """
+        return
         i = {n.full_path: n.data for n in inventory.all_nodes() if n.data}
         for path, contents in i.items():
             dst_dir = join(self.inventory_dir, path.strip('/'))

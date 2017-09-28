@@ -9,7 +9,7 @@ def assert_collected_inventory(tree):
     assert tree['dev']['qa2'].inventory['new_key'] == 'my_value'
     assert tree['prod'].inventory['mysql'] == 2.0
 
-def test_collectg_inventory(inventory):
+def test_collected_inventory(inventory):
     assert_collected_inventory(inventory._tree)
 
 def test_flatten_data_tree(inventory, confgen):
@@ -70,54 +70,39 @@ def test_search_keys(inventory, pattern, expected):
 def test_search_values(inventory, pattern, expected):
     assert {i.path for i in inventory.search_value(pattern)} == expected
 
-# def test_set_new_value_existing_path(inventory):
-#     inventory.set('/', 'foo', 'bar')
-#     loaded = inventory.collect()
-#
-#     assert_collected_inventory(loaded)
-#     assert loaded.get('/').foo == "bar"
-#
-# def test_set_set_value_new_path(inventory):
-#     inventory.set('/staging/demo1', 'foo', 'bar')
-#     loaded = inventory.collect()
-#
-#     assert_collected_inventory(loaded)
-#     assert loaded.get('/staging/demo1').foo == "bar"
-#
-#
-# def test_delete_existing_key(inventory):
-#     inventory.delete('/', 'secret')
-#
-#     tree = inventory.collect()
-#     assert tree.get('/').mysql == 1.0
-#     assert tree.get('/prod/main').mysql == 3.0
-#     assert tree.get('/dev/qa1').mysql == 4.0
-#     assert tree.get('/dev/qa2').mysql == 9.0
-#     assert tree.get('/dev/qa2').new_key == 'my_value'
-#     assert tree.get('/prod').mysql == 2.0
-#     assert tree.get('/test').secret == 'plaintext'
-#
-#
-# def test_delete_last_remaining_key(inventory):
-#     inventory.delete('/dev/qa1', 'mysql')
-#
-#     tree = inventory.collect()
-#     assert tree.get('/').mysql == 1.0
-#     assert tree.get('/prod/main').mysql == 3.0
-#     assert tree.get('/dev/qa2').mysql == 9.0
-#     assert tree.get('/dev/qa2').new_key == 'my_value'
-#     assert tree.get('/prod').mysql == 2.0
-#     assert tree.get('/test').secret == 'plaintext'
-#
-#
-# def test_delete_non_existing_path(inventory):
-#     inventory.delete('/dev/qa3', 'mysql')
-#
-#     loaded = inventory.collect()
-#     assert_collected_inventory(loaded)
-#
-# def test_delete_non_existing_key(inventory):
-#     inventory.delete('/dev/qa2', 'psql')
-#
-#     loaded = inventory.collect()
-#     assert_collected_inventory(loaded)
+@pytest.mark.parametrize('path', ('infra', 'infra/prod', 'infra/prod/main', 'infra/prod/main/webapp'))
+def test_set_new_value_existing_path(inventory, path):
+    inventory.set(path, 'foo', 'bar')
+
+    assert_collected_inventory(inventory._tree)
+    assert inventory._tree.by_path(path).inventory['foo'] == "bar"
+
+def test_set_set_value_new_path(inventory):
+    with pytest.raises(KeyError):
+        inventory.set('infra/prod/staging/demo1', 'foo', 'bar')
+
+    assert_collected_inventory(inventory._tree)
+
+
+def test_delete_existing_key(inventory):
+    assert inventory._tree.by_path('infra').as_dict['secret'] == 'password'
+    assert inventory.delete('infra', 'secret') == 'password'
+    assert 'secret' not in inventory._tree.by_path('infra').as_dict
+
+
+def test_delete_last_remaining_key(inventory):
+    assert inventory._tree.by_path('infra/dev/qa1').as_dict['mysql'] == 4.0
+    assert inventory.delete('infra/dev/qa1', 'mysql') == 4.0
+    assert {} == inventory._tree.by_path('infra/dev/qa1').inventory
+
+
+def test_delete_non_existing_path(inventory):
+    assert inventory.delete('infra/dev/qa3', 'mysql') is None
+    with pytest.raises(KeyError):
+        assert inventory._tree.by_path('infra/dev/qa3')
+    assert_collected_inventory(inventory._tree)
+
+def test_delete_non_existing_key(inventory):
+    assert inventory.delete('infra/dev/qa2', 'psql') is None
+    assert inventory._tree.by_path('infra/dev/qa2').inventory == {'mysql': 9.0, 'new_key': "my_value"}
+    assert_collected_inventory(inventory._tree)

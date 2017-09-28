@@ -10,6 +10,8 @@ from . import inventory
 from . import view
 
 class Node(MutableMapping):
+    path_delimiter = "/"
+
     def __init__(self, name, level, parent, root=None):
         self.name = name
         self.level = level
@@ -40,14 +42,19 @@ class Node(MutableMapping):
 
     @property
     def path(self):
-        return "/".join(reversed([str(i) for i in self.up()]))
+        return self.path_delimiter.join(reversed([str(i) for i in self.up()]))
 
     @property
     def has_children(self):
         return bool(self.children)
 
-    def by_path(self, parts):
-        return reduce(operator.getitem, parts, self.root)
+    def path_to_list(self, path):
+        if path in ('', 'infra'):
+            return []
+        return path.lstrip('infra/').split(self.path_delimiter)
+
+    def by_path(self, path):
+        return reduce(operator.getitem, self.path_to_list(path), self.root)
 
     @property
     def flatten(self):
