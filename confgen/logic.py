@@ -64,7 +64,7 @@ class Node(MutableMapping):
             c = y.inventory.copy()
             s_key = "{}__source"
             # tracking the source. appends a path to a __source key.
-            map(lambda i: x.setdefault(s_key.format(i), []).append(y.path), c)
+            list(map(lambda i: x.setdefault(s_key.format(i), []).append(y.path), c))
             c.update(x)
             return c
 
