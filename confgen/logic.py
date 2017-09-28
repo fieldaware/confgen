@@ -141,10 +141,11 @@ class ConfGen(object):
                 raise
 
         for node, rendered_tempaltes in self.rendered():
+            dst_dir = join(land_dir, node.path.lstrip('infra/'))
             # create dirs if they don't exist
-            inventory.mkdir_p(join(land_dir, node.path.lstrip('infra/')))
+            inventory.mkdir_p(dst_dir)
             for filename, rendered_config in rendered_tempaltes.items():
-                with open(join(land_dir, filename), 'w+') as f:
+                with open(join(dst_dir, filename), 'w+') as f:
                     f.write(rendered_config)
 
     def set(self, path, key, value):
