@@ -1,4 +1,6 @@
+from os.path import join
 import pytest
+import yaml
 
 def assert_collected_inventory(tree):
     assert tree.inventory['mysql'] == 1.0
@@ -70,12 +72,21 @@ def test_search_keys(inventory, pattern, expected):
 def test_search_values(inventory, pattern, expected):
     assert {i.path for i in inventory.search_value(pattern)} == expected
 
-@pytest.mark.parametrize('path', ('infra', 'infra/prod', 'infra/prod/main', 'infra/prod/main/webapp'))
+# opens file flushed to the inventory directory
+open_inv = lambda i, p: yaml.load(open(join(i.inventory_dir, p, 'config.yaml')).read())
+
+@pytest.mark.parametrize('path', (
+    'infra',
+    'infra/prod',
+    'infra/prod/main',
+    'infra/prod/main/webapp')
+)
 def test_set_new_value_existing_path(inventory, path):
     inventory.set(path, 'foo', 'bar')
 
     assert_collected_inventory(inventory._tree)
     assert inventory._tree.by_path(path).inventory['foo'] == "bar"
+    assert open_inv(inventory, path.lstrip('infra/'))['foo'] == 'bar'
 
 def test_set_set_value_new_path(inventory):
     with pytest.raises(KeyError):
@@ -88,12 +99,15 @@ def test_delete_existing_key(inventory):
     assert inventory._tree.by_path('infra').as_dict['secret'] == 'password'
     assert inventory.delete('infra', 'secret') == 'password'
     assert 'secret' not in inventory._tree.by_path('infra').as_dict
+    assert open_inv(inventory, "") == {"mysql": 1.0}
 
 
 def test_delete_last_remaining_key(inventory):
     assert inventory._tree.by_path('infra/dev/qa1').as_dict['mysql'] == 4.0
     assert inventory.delete('infra/dev/qa1', 'mysql') == 4.0
     assert {} == inventory._tree.by_path('infra/dev/qa1').inventory
+    with pytest.raises(IOError):  # file should be gone
+        open_inv(inventory, "dev/qa1")
 
 
 def test_delete_non_existing_path(inventory):
@@ -105,4 +119,14 @@ def test_delete_non_existing_path(inventory):
 def test_delete_non_existing_key(inventory):
     assert inventory.delete('infra/dev/qa2', 'psql') is None
     assert inventory._tree.by_path('infra/dev/qa2').inventory == {'mysql': 9.0, 'new_key': "my_value"}
+    assert open_inv(inventory, 'dev/qa2') == {'mysql': 9.0, 'new_key': "my_value"}
     assert_collected_inventory(inventory._tree)
+
+
+def test_flush(inventory):
+    inventory._flush()
+    assert open_inv(inventory, "") == {'mysql': 1.0, 'secret': "password"}
+    assert open_inv(inventory, "prod") == {'mysql': 2.0}
+    assert open_inv(inventory, "prod/main") == {'mysql': 3.0}
+    assert open_inv(inventory, "dev/qa1") == {'mysql': 4.0}
+    assert open_inv(inventory, "dev/qa2") == {'mysql': 9.0, 'new_key': 'my_value'}

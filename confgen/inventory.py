@@ -5,6 +5,7 @@ from os.path import join
 
 import yaml
 
+from . import dir_rm
 
 def mkdir_p(path):
     try:
@@ -73,8 +74,9 @@ class Inventory(object):
 
     def _flush(self):
         """
-        Saves given inventory to disk
+        Saves current inventory to disk
         """
+        dir_rm(self.inventory_dir)
         for node in (i for i in self._tree.all() if i.inventory):
             # XXX: this infra/ bugs me
             dst_dir = join(self.inventory_dir, node.path.lstrip('infra/'))

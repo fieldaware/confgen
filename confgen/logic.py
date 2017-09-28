@@ -1,13 +1,12 @@
 import operator
 from functools import reduce
-import shutil
-import os
 from os.path import join
 from collections import MutableMapping
 import yaml
 
 from . import inventory
 from . import view
+from . import dir_rm
 
 class Node(MutableMapping):
     path_delimiter = "/"
@@ -131,15 +130,7 @@ class ConfGen(object):
 
     def build(self):
         land_dir = join(self.home, self.build_dir)
-        # remove all files to avoid stale configs (they will re-generated)
-        try:
-            shutil.rmtree(self.build_dir)
-        except OSError as e:
-            if e.errno == 2:  # build dir not found, it is fine, ignore
-                pass
-            else:
-                raise
-
+        dir_rm(land_dir)
         for node, rendered_tempaltes in self.rendered():
             dst_dir = join(land_dir, node.path.lstrip('infra/'))
             # create dirs if they don't exist
