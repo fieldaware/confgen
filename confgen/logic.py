@@ -132,6 +132,7 @@ class ConfGen(object):
         land_dir = join(self.home, self.build_dir)
         dir_rm(land_dir)
         for node, rendered_tempaltes in self.rendered():
+            # XXX: this infra/ shite again, how do i get rid of it? :<
             dst_dir = join(land_dir, node.path.lstrip('infra/'))
             # create dirs if they don't exist
             inventory.mkdir_p(dst_dir)

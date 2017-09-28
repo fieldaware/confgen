@@ -1,4 +1,5 @@
 import pytest
+from os.path import join
 
 def test_confgen_tree_build(confgen):
     '''
@@ -114,3 +115,18 @@ def test_confgen_tree_leafs(confgen):
 
 def test_confgen_build(confgen):
     confgen.build()
+    f = lambda p: open(join(confgen.home, confgen.build_dir, p)).read()
+    assert f('prod/main/webapp/my.cnf') == "infra prod main webapp"
+    assert f('prod/main/webapp/production.ini') == "3.0 password main multiapp staging"
+    assert f('prod/multiapp/webapp/my.cnf') == "infra prod multiapp webapp"
+    assert f('prod/multiapp/webapp/production.ini') == "2.0 password main multiapp staging"
+    assert f('prod/multiapp/api/my.cnf') == "infra prod multiapp api"
+    assert f('prod/staging/webapp/my.cnf') == "infra prod staging webapp"
+    assert f('prod/staging/webapp/production.ini') == "2.0 password main multiapp staging"
+    assert f('prod/staging/api/my.cnf') == "infra prod staging api"
+    assert f('dev/qa1/webapp/my.cnf') == "infra dev qa1 webapp"
+    assert f('dev/qa1/webapp/production.ini') == "4.0 password qa1 qa2"
+    assert f('dev/qa1/api/my.cnf') == "infra dev qa1 api"
+    assert f('dev/qa2/webapp/my.cnf') == "infra dev qa2 webapp"
+    assert f('dev/qa2/webapp/production.ini') == "9.0 password qa1 qa2"
+    assert f('dev/qa2/api/my.cnf') == "infra dev qa2 api"
