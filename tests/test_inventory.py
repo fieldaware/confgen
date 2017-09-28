@@ -17,27 +17,28 @@ def test_collected_inventory(inventory):
 def test_flatten_data_tree(inventory, confgen):
     t = inventory._tree
     assert t.as_dict['mysql'] == 1.0
-    #assert t['mysql__source'] == '/'
     assert t.as_dict['secret'] == 'password'
-    #assert t['secret__source'] == '/'
     assert t['dev']['qa1'].as_dict['mysql'] == 4.0
-    #assert t['dev']['qa1']['mysql__source'] == '/ override: /dev/qa1'
     assert t['dev']['qa1'].as_dict['secret'] == 'password'
-    #assert t['dev']['qa1']['secret__source'] == '/'
     assert t['dev']['qa2'].as_dict['mysql'] == 9.0
-    #assert t['dev']['qa2']['mysql__source'] == '/ override: /dev/qa2'
     assert t['dev']['qa2'].as_dict['secret'] == 'password'
-    #assert t['dev']['qa2']['secret__source'] == '/'
     assert t['dev']['qa2'].as_dict['new_key'] == 'my_value'
-    #assert t['dev']['qa2']['new_key__source'] == '/dev/qa2'
     assert t['prod'].as_dict['mysql'] == 2.0
-    #assert t['prod']['mysql__source'] == '/ override: /prod'
     assert t['prod'].as_dict['secret'] == 'password'
-    #assert t['prod']['secret__source'] == '/'
     assert t['prod']['main'].as_dict['mysql'] == 3.0
-    #assert t['prod']['main']['mysql__source'] == '/ override: /prod, /prod/main'
     assert t['prod']['main'].as_dict['secret'] == 'password'
-    #assert t['prod']['main']['secret__source'] == '/'
+
+    assert t.as_dict['mysql__source'] == ['/']
+    assert t.as_dict['secret__source'] == ['/']
+    assert t['dev']['qa1'].as_dict['mysql__source'] == ['/dev/qa1', '/']
+    assert t['dev']['qa1'].as_dict['secret__source'] == ['/']
+    assert t['dev']['qa2'].as_dict['mysql__source'] == ['/dev/qa2', '/']
+    assert t['dev']['qa2'].as_dict['secret__source'] == ['/']
+    assert t['dev']['qa2'].as_dict['new_key__source'] == ['/dev/qa2']
+    assert t['prod'].as_dict['mysql__source'] == ['/prod', '/']
+    assert t['prod'].as_dict['secret__source'] == ['/']
+    assert t['prod']['main'].as_dict['mysql__source'] == ['/prod/main', '/prod', '/']
+    assert t['prod']['main'].as_dict['secret__source'] == ['/']
 
 
 @pytest.mark.parametrize('pattern,expected', (

@@ -62,10 +62,13 @@ class Node(MutableMapping):
             if I only had python3.5 {**x, **y} :<
             '''
             c = y.inventory.copy()
+            s_key = "{}__source"
+            # tracking the source. appends a path to a __source key.
+            map(lambda i: x.setdefault(s_key.format(i), []).append(y.path), c)
             c.update(x)
             return c
 
-        return reduce(merge_dicts, self.up(), self.inventory)
+        return reduce(merge_dicts, self.up(), {})
 
     def __repr__(self):
         return "Node <{}>: {}".format(id(self), self.name)
