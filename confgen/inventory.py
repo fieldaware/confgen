@@ -13,21 +13,6 @@ def mkdir_p(path):
         if not exc.errno == errno.EEXIST:
             raise
 
-    # def flatten(self, path):
-    #     attrs = {}
-    #     sources = defaultdict(list)
-    #     for node in self.nodes(path):
-    #         attrs.update(node.data)
-    #         for overlap in set(attrs.keys()).intersection(set(node.data)):
-    #             sources[overlap].append(node.full_path)
-    #
-    #     for key, appearnces in sources.items():
-    #         if len(appearnces) == 1:
-    #             attrs["{}__source".format(key)] = appearnces[0]
-    #         else:
-    #             attrs["{}__source".format(key)] = "{} override: {}".format(appearnces[0], ", ".join(appearnces[1:]))
-    #     return Node(name=str(node), full_path=path, data=attrs)
-    #
 class Inventory(object):
     """
     Represents, builds and saves the invetory.
@@ -62,6 +47,7 @@ class Inventory(object):
                 try:
                     self._tree.by_path(self._parse_file_path(path)).inventory = configyml
                 except KeyError:
+                    # XXX
                     # something in the inventory that doesn't make sense
                     # a path that doesn't exist in the infra tree but is present
                     # in the inventory
@@ -89,13 +75,12 @@ class Inventory(object):
         """
         Saves given inventory to disk
         """
-        return
-        i = {n.full_path: n.data for n in inventory.all_nodes() if n.data}
-        for path, contents in i.items():
-            dst_dir = join(self.inventory_dir, path.strip('/'))
+        for node in (i for i in self._tree.all() if i.inventory):
+            # XXX: this infra/ bugs me
+            dst_dir = join(self.inventory_dir, node.path.lstrip('infra/'))
             mkdir_p(dst_dir)
             with open(join(dst_dir, self.config_filename), 'w+') as f:
-                yaml.safe_dump(contents, f, default_flow_style=False)
+                yaml.safe_dump(node.inventory, f, default_flow_style=False)
 
     def search_key(self, pattern):
         rgx = re.compile(pattern)

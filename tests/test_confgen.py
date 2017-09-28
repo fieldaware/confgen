@@ -111,3 +111,6 @@ def test_confgen_tree_leafs(confgen):
         'infra/dev/qa2/webapp',
         'infra/dev/qa2/api',
     }
+
+def test_confgen_build(confgen):
+    confgen.build()

@@ -125,15 +125,11 @@ class ConfGen(object):
             add_node(infra[k], k, 1, root)
         return root
 
-    def collect(self):
-        '''
-        takes leafs from the tree and renders templates for them
-        '''
-        self.inventory.collect(self.tree)
-        for leaf in self.tree.leafs:
-            leaf.templates = self.renderer.service(leaf)
+    def rendered(self):
+        for service in self.root.services:
+            yield service, self.renderer.service(service)
 
-    def flush(self, collected):
+    def build(self):
         land_dir = join(self.home, self.build_dir)
         # remove all files to avoid stale configs (they will re-generated)
         try:
@@ -144,15 +140,12 @@ class ConfGen(object):
             else:
                 raise
 
-        for path, contents in collected.items():
-            path = path.rstrip('/')  # remove '/' from the begging
+        for node, rendered_tempaltes in self.rendered():
             # create dirs if they don't exist
-            inventory.mkdir_p(join(land_dir, os.path.dirname(path)))
-            with open(join(land_dir, path), 'w+') as f:
-                f.write(contents)
-
-    def build(self):
-        self.flush(self.collect())
+            inventory.mkdir_p(join(land_dir, node.path.lstrip('infra/')))
+            for filename, rendered_config in rendered_tempaltes.items():
+                with open(join(land_dir, filename), 'w+') as f:
+                    f.write(rendered_config)
 
     def set(self, path, key, value):
         self.inventory.set(path, key, value)
