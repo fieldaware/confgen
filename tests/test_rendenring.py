@@ -2,25 +2,25 @@ import pytest
 
 @pytest.mark.parametrize("path, expected", (
     (
-        'infra/prod/main/webapp', {
-            'my.cnf': u"infra prod main webapp",
+        '/prod/main/webapp', {
+            'my.cnf': u"/ prod main webapp",
             'production.ini': u"3.0 password main multiapp staging"
         }
     ),
     (
-        'infra/prod/multiapp/api', {
-            'my.cnf': u"infra prod multiapp api",
+        '/prod/multiapp/api', {
+            'my.cnf': u"/ prod multiapp api",
         }
     ),
     (
-        'infra/dev/qa1/webapp', {
-            'my.cnf': u"infra dev qa1 webapp",
+        '/dev/qa1/webapp', {
+            'my.cnf': u"/ dev qa1 webapp",
             'production.ini': u"4.0 password qa1 qa2"
         }
     ),
     (
-        'infra/dev/qa2/api', {
-            'my.cnf': u"infra dev qa2 api",
+        '/dev/qa2/api', {
+            'my.cnf': u"/ dev qa2 api",
         }
     ),
 

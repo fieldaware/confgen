@@ -42,22 +42,22 @@ def test_flatten_data_tree(inventory, confgen):
 
 @pytest.mark.parametrize('pattern,expected', (
     (
-        'prod', {'infra/prod', 'infra/prod/main'}
+        'prod', {'/prod', '/prod/main'}
     ),
-    (
-        '/.*', {'infra/dev/qa1', 'infra/dev/qa2', 'infra/prod', 'infra/prod/main'}
-    ),
+    # (
+    #     '/.*', {'/dev/qa1', '/dev/qa2', '/prod', '/prod/main'}
+    # ),
     (
         '.*', {
-            'infra',
-            'infra/dev/qa1',
-            'infra/dev/qa2',
-            'infra/prod',
-            'infra/prod/main',
+            '/',
+            '/dev/qa1',
+            '/dev/qa2',
+            '/prod',
+            '/prod/main',
         }
     ),
     (
-        '/dev/', {'infra/dev/qa1', 'infra/dev/qa2'}
+        '/dev/', {'/dev/qa1', '/dev/qa2'}
     ),
 ))
 def test_search_keys(inventory, pattern, expected):
@@ -65,9 +65,9 @@ def test_search_keys(inventory, pattern, expected):
 
 
 @pytest.mark.parametrize('pattern,expected', (
-    ('my_value', {'infra/dev/qa2'}),
-    ('1.0', {'infra', }),
-    ('mysql', {'infra', 'infra/prod', 'infra/prod/main', 'infra/dev/qa1', 'infra/dev/qa2'}),
+    ('my_value', {'/dev/qa2'}),
+    ('1.0', {'/', }),
+    ('mysql', {'/', '/prod', '/prod/main', '/dev/qa1', '/dev/qa2'}),
 ))
 def test_search_values(inventory, pattern, expected):
     assert {i.path for i in inventory.search_value(pattern)} == expected
@@ -76,21 +76,21 @@ def test_search_values(inventory, pattern, expected):
 open_inv = lambda i, p: yaml.load(open(join(i.inventory_dir, p, 'config.yaml')).read())
 
 @pytest.mark.parametrize('path', (
-    'infra',
-    'infra/prod',
-    'infra/prod/main',
-    'infra/prod/main/webapp')
+    '/',
+    '/prod',
+    '/prod/main',
+    '/prod/main/webapp')
 )
 def test_set_new_value_existing_path(inventory, path):
     inventory.set(path, 'foo', 'bar')
 
     assert_collected_inventory(inventory._tree)
     assert inventory._tree.by_path(path).inventory['foo'] == "bar"
-    assert open_inv(inventory, path.lstrip('infra/'))['foo'] == 'bar'
+    assert open_inv(inventory, path.lstrip('/'))['foo'] == 'bar'
 
 def test_set_set_value_new_path(inventory):
     with pytest.raises(KeyError):
-        inventory.set('infra/prod/staging/demo1', 'foo', 'bar')
+        inventory.set('/prod/staging/demo1', 'foo', 'bar')
 
     assert_collected_inventory(inventory._tree)
 
@@ -103,22 +103,22 @@ def test_delete_existing_key(inventory):
 
 
 def test_delete_last_remaining_key(inventory):
-    assert inventory._tree.by_path('infra/dev/qa1').as_dict['mysql'] == 4.0
-    assert inventory.delete('infra/dev/qa1', 'mysql') == 4.0
-    assert {} == inventory._tree.by_path('infra/dev/qa1').inventory
+    assert inventory._tree.by_path('/dev/qa1').as_dict['mysql'] == 4.0
+    assert inventory.delete('/dev/qa1', 'mysql') == 4.0
+    assert {} == inventory._tree.by_path('/dev/qa1').inventory
     with pytest.raises(IOError):  # file should be gone
         open_inv(inventory, "dev/qa1")
 
 
 def test_delete_non_existing_path(inventory):
-    assert inventory.delete('infra/dev/qa3', 'mysql') is None
+    assert inventory.delete('/dev/qa3', 'mysql') is None
     with pytest.raises(KeyError):
-        assert inventory._tree.by_path('infra/dev/qa3')
+        assert inventory._tree.by_path('/dev/qa3')
     assert_collected_inventory(inventory._tree)
 
 def test_delete_non_existing_key(inventory):
-    assert inventory.delete('infra/dev/qa2', 'psql') is None
-    assert inventory._tree.by_path('infra/dev/qa2').inventory == {'mysql': 9.0, 'new_key': "my_value"}
+    assert inventory.delete('/dev/qa2', 'psql') is None
+    assert inventory._tree.by_path('/dev/qa2').inventory == {'mysql': 9.0, 'new_key': "my_value"}
     assert open_inv(inventory, 'dev/qa2') == {'mysql': 9.0, 'new_key': "my_value"}
     assert_collected_inventory(inventory._tree)
 

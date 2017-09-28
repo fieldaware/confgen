@@ -41,16 +41,16 @@ class Node(MutableMapping):
 
     @property
     def path(self):
-        return self.path_delimiter.join(reversed([str(i) for i in self.up()]))
+        return reduce(join, reversed([str(i) for i in self.up()]))
 
     @property
     def has_children(self):
         return bool(self.children)
 
     def path_to_list(self, path):
-        if path in ('', 'infra'):
+        if path in ('/', ''):
             return []
-        return path.lstrip('infra/').split(self.path_delimiter)
+        return path.split(self.path_delimiter)[1:]
 
     def by_path(self, path):
         return reduce(operator.getitem, self.path_to_list(path), self.root)
@@ -108,7 +108,7 @@ class ConfGen(object):
         self.renderer = view.Renderer(home)
 
     def build_tree(self, infra):
-        root = Node('infra', self.config['hierarchy'][0], None, None)
+        root = Node('/', self.config['hierarchy'][0], None, None)
 
         def add_node(infra_sub, name, level, parent):
             node = Node(name, self.config['hierarchy'][level], parent, root)
@@ -132,8 +132,7 @@ class ConfGen(object):
         land_dir = join(self.home, self.build_dir)
         dir_rm(land_dir)
         for node, rendered_tempaltes in self.rendered():
-            # XXX: this infra/ shite again, how do i get rid of it? :<
-            dst_dir = join(land_dir, node.path.lstrip('infra/'))
+            dst_dir = join(land_dir, node.path.lstrip('/'))
             # create dirs if they don't exist
             inventory.mkdir_p(dst_dir)
             for filename, rendered_config in rendered_tempaltes.items():

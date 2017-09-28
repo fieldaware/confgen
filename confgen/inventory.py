@@ -36,7 +36,7 @@ class Inventory(object):
         """
         Takes absolute path in inventory and parses it relative
         """
-        return path[len(self.inventory_dir) + 1:]
+        return path[len(self.inventory_dir):]
 
     def __collect(self):
         """
@@ -79,7 +79,7 @@ class Inventory(object):
         dir_rm(self.inventory_dir)
         for node in (i for i in self._tree.all() if i.inventory):
             # XXX: this infra/ bugs me
-            dst_dir = join(self.inventory_dir, node.path.lstrip('infra/'))
+            dst_dir = join(self.inventory_dir, node.path.lstrip('/'))
             mkdir_p(dst_dir)
             with open(join(dst_dir, self.config_filename), 'w+') as f:
                 yaml.safe_dump(node.inventory, f, default_flow_style=False)
