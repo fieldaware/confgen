@@ -62,7 +62,7 @@ def test_flatten_data_tree(inventory, confgen):
     ),
 ))
 def test_search_keys(inventory, pattern, expected):
-    assert {i.path for i in inventory.search_key(pattern)} == expected
+    assert {i[0] for i in inventory.search_key(pattern)} == expected
 
 
 @pytest.mark.parametrize('pattern,expected', (
@@ -71,7 +71,7 @@ def test_search_keys(inventory, pattern, expected):
     ('mysql', {'/', '/prod', '/prod/main', '/dev/qa1', '/dev/qa2'}),
 ))
 def test_search_values(inventory, pattern, expected):
-    assert {i.path for i in inventory.search_value(pattern)} == expected
+    assert {i[0] for i in inventory.search_value(pattern)} == expected
 
 # opens file flushed to the inventory directory
 open_inv = lambda i, p: yaml.load(open(join(i.inventory_dir, p, 'config.yaml')).read())

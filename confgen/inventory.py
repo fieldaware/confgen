@@ -86,14 +86,15 @@ class Inventory(object):
 
     def search_key(self, pattern):
         rgx = re.compile(pattern)
-        return [n for n in self._tree.all() if rgx.search(n.path) and n.inventory]
+        return [(n.path, n.inventory) for n in self._tree.all() if rgx.search(n.path) and n.inventory]
 
     def search_value(self, pattern):
         rgx = re.compile(pattern)
 
-        def lookup(n):
-            for k, v in n.inventory.items():
-                if rgx.search(k) or rgx.search(str(v)):  # v might be int or float
-                    return n
+        def lookup():
+            for n in self._tree.all():
+                for k, v in n.inventory.items():
+                    if rgx.search(k) or rgx.search(str(v)):  # v might be int or float
+                        yield n.path, {k: v}
 
-        return [i for i in self._tree.all() if lookup(i)]
+        return list(lookup())

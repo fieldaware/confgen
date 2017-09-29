@@ -37,8 +37,8 @@ class Renderer(object):
     @staticmethod
     def render_search_result(result):
         table = []
-        for node in result:
-            for ikey, ivalue in node.inventory.items():
-                table.append((node.path, ikey, ivalue))
+        for path, inventory in result:
+            for ikey, ivalue in inventory.items():
+                table.append((path, ikey, ivalue))
 
         return tabulate.tabulate(table, ['path', 'key', 'value'], tablefmt='psql')
