@@ -1,6 +1,6 @@
 import shutil
 
-__version__ = '0.5.4'
+__version__ = '0.6.0'
 
 def dir_rm(path):
     # remove all files to avoid stale configs (they will re-generated)
