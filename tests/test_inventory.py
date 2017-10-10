@@ -1,168 +1,133 @@
+from os.path import join
 import pytest
-import copy
-collected_inventory = {
-    '/': {'mysql': 1.0, 'secret': 'password'},
-    '/prod/main': {'mysql': 3.0},
-    '/dev/qa1': {'mysql': 4.0},
-    '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value'},
-    '/prod': {'mysql': 2.0},
-    '/test': {'secret': 'plaintext'},
-}
+import yaml
 
-def test_load_inventory(inventory):
-    loaded = inventory.collect()
-    assert loaded == collected_inventory
+def assert_collected_inventory(tree):
+    assert tree.inventory['mysql'] == 1.0
+    assert tree.inventory['secret'] == 'password'
+    assert tree['prod']['main'].inventory['mysql'] == 3.0
+    assert tree['dev']['qa1'].inventory['mysql'] == 4.0
+    assert tree['dev']['qa2'].inventory['mysql'] == 9.0
+    assert tree['dev']['qa2'].inventory['new_key'] == 'my_value'
+    assert tree['prod'].inventory['mysql'] == 2.0
 
-def test_build_inventory(inventory):
-    public_inventory = inventory.build()
+def test_collected_inventory(inventory):
+    assert_collected_inventory(inventory._tree)
 
-    assert public_inventory == {
-        '/': {
-            'mysql': 1.0,
-            'mysql__source': 'mysql:/',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/dev/qa1': {
-            'mysql': 4.0,
-            'mysql__source': 'mysql:/ override:/dev/qa1',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/dev/qa2': {
-            'mysql': 9.0,
-            'mysql__source': 'mysql:/ override:/dev/qa2',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-            'new_key': 'my_value',
-            'new_key__source': 'new_key:/dev/qa2',
-        },
-        '/prod': {
-            'mysql': 2.0,
-            'mysql__source': 'mysql:/ override:/prod',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/prod/main': {
-            'mysql': 3.0,
-            'mysql__source': 'mysql:/ override:/prod,/prod/main',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/test': {
-            'mysql': 1.0,
-            'mysql__source': 'mysql:/',
-            'secret': 'plaintext',
-            'secret__source': 'secret:/ override:/test',
-        }
-    }
+def test_flatten_data_tree(inventory, confgen):
+    t = inventory._tree
+    assert t.as_dict['mysql'] == 1.0
+    assert t.as_dict['secret'] == 'password'
+    assert t['dev']['qa1'].as_dict['mysql'] == 4.0
+    assert t['dev']['qa1'].as_dict['secret'] == 'password'
+    assert t['dev']['qa2'].as_dict['mysql'] == 9.0
+    assert t['dev']['qa2'].as_dict['secret'] == 'password'
+    assert t['dev']['qa2'].as_dict['new_key'] == 'my_value'
+    assert t['prod'].as_dict['mysql'] == 2.0
+    assert t['prod'].as_dict['secret'] == 'password'
+    assert t['prod']['main'].as_dict['mysql'] == 3.0
+    assert t['prod']['main'].as_dict['secret'] == 'password'
+
+    assert t.as_dict['mysql__source'] == ['/']
+    assert t.as_dict['secret__source'] == ['/']
+    assert t['dev']['qa1'].as_dict['mysql__source'] == ['/dev/qa1', '/']
+    assert t['dev']['qa1'].as_dict['secret__source'] == ['/']
+    assert t['dev']['qa2'].as_dict['mysql__source'] == ['/dev/qa2', '/']
+    assert t['dev']['qa2'].as_dict['secret__source'] == ['/']
+    assert t['dev']['qa2'].as_dict['new_key__source'] == ['/dev/qa2']
+    assert t['prod'].as_dict['mysql__source'] == ['/prod', '/']
+    assert t['prod'].as_dict['secret__source'] == ['/']
+    assert t['prod']['main'].as_dict['mysql__source'] == ['/prod/main', '/prod', '/']
+    assert t['prod']['main'].as_dict['secret__source'] == ['/']
 
 
 @pytest.mark.parametrize('pattern,expected', (
     (
-        'prod',
-        {
-            '/prod': {
-                'mysql': 2.0, 'secret': 'password'
-            },
-            '/prod/main': {
-                'mysql': 3.0, 'secret': 'password'
-            }
+        'prod', {'/prod', '/prod/main'}
+    ),
+    # (
+    #     '/.*', {'/dev/qa1', '/dev/qa2', '/prod', '/prod/main'}
+    # ),
+    (
+        '.*', {
+            '/',
+            '/dev/qa1',
+            '/dev/qa2',
+            '/prod',
+            '/prod/main',
         }
     ),
     (
-        '/.*',
-        {
-            '/': {'mysql': 1.0, 'secret': 'password'},
-            '/dev/qa1': {'mysql': 4.0, 'secret': 'password'},
-            '/dev/qa2': {'mysql': 9.0, 'new_key': 'my_value', 'secret': 'password'},
-            '/prod': {'mysql': 2.0, 'secret': 'password'},
-            '/prod/main': {'mysql': 3.0, 'secret': 'password'},
-            '/test': {'mysql': 1.0, 'secret': 'plaintext'}
-        }
-    ),
-    (
-        '/dev/',
-        {
-            '/dev/qa1': {
-                'mysql': 4.0,
-                'secret': 'password',
-            },
-            '/dev/qa2': {
-                'mysql': 9.0,
-                'secret': 'password',
-                'new_key': 'my_value',
-            },
-        }
+        '/dev/', {'/dev/qa1', '/dev/qa2'}
     ),
 ))
 def test_search_keys(inventory, pattern, expected):
-    assert inventory.search_key(pattern) == expected
+    assert {i[0] for i in inventory.search_key(pattern)} == expected
 
 
 @pytest.mark.parametrize('pattern,expected', (
-    (
-        'my_value',
-        {'/dev/qa2': {'new_key': 'my_value'}, }
-    ),
-    (
-        'plaintext',
-        {'/test': {'secret': 'plaintext'}}
-    ),
-    (
-        '1.0',
-        {
-            '/': {'mysql': 1.0, },
-            '/test': {'mysql': 1.0, },
-
-        }
-    ),
+    ('my_value', {'/dev/qa2'}),
+    ('1.0', {'/', }),
+    ('mysql', {'/', '/prod', '/prod/main', '/dev/qa1', '/dev/qa2'}),
 ))
 def test_search_values(inventory, pattern, expected):
-    assert inventory.search_value(pattern) == expected
+    assert {i[0] for i in inventory.search_value(pattern)} == expected
 
+# opens file flushed to the inventory directory
+open_inv = lambda i, p: yaml.load(open(join(i.inventory_dir, p, 'config.yaml')).read())
 
-def test_set_new_value_existing_path(inventory):
-    inventory.set('/', 'foo', 'bar')
-    loaded = inventory.collect()
+@pytest.mark.parametrize('path', (
+    '/',
+    '/prod',
+    '/prod/main',
+    '/prod/main/webapp')
+)
+def test_set_new_value_existing_path(inventory, path):
+    inventory.set(path, 'foo', 'bar')
 
-    expected = copy.deepcopy(collected_inventory)
-    expected['/']['foo'] = 'bar'
-    assert loaded == expected
+    assert_collected_inventory(inventory._tree)
+    assert inventory._tree.by_path(path).inventory['foo'] == "bar"
+    assert open_inv(inventory, path.lstrip('/'))['foo'] == 'bar'
 
 def test_set_set_value_new_path(inventory):
-    inventory.set('/staging/demo1', 'foo', 'bar')
-    loaded = inventory.collect()
+    with pytest.raises(KeyError):
+        inventory.set('/prod/staging/demo1', 'foo', 'bar')
 
-    expected = copy.deepcopy(collected_inventory)
-    expected['/staging/demo1'] = {'foo': 'bar'}
-    assert loaded == expected
+    assert_collected_inventory(inventory._tree)
+
 
 def test_delete_existing_key(inventory):
-    inventory.delete('/', 'secret')
+    assert inventory._tree.by_path('infra').as_dict['secret'] == 'password'
+    assert inventory.delete('infra', 'secret') == 'password'
+    assert 'secret' not in inventory._tree.by_path('infra').as_dict
+    assert open_inv(inventory, "") == {"mysql": 1.0}
 
-    loaded = inventory.collect()
-    expected = copy.deepcopy(collected_inventory)
-    expected['/'].pop('secret')
-    assert loaded == expected
 
 def test_delete_last_remaining_key(inventory):
-    inventory.delete('/dev/qa1', 'mysql')
+    assert inventory._tree.by_path('/dev/qa1').as_dict['mysql'] == 4.0
+    assert inventory.delete('/dev/qa1', 'mysql') == 4.0
+    assert {} == inventory._tree.by_path('/dev/qa1').inventory
+    with pytest.raises(IOError):  # file should be gone
+        open_inv(inventory, "dev/qa1")
 
-    loaded = inventory.collect()
-    expected = copy.deepcopy(collected_inventory)
-    expected['/dev/qa1'] = {}
-    assert loaded == expected
 
 def test_delete_non_existing_path(inventory):
-    inventory.delete('/dev/qa3', 'mysql')
-
-    loaded = inventory.collect()
-    assert loaded == collected_inventory
-
+    assert inventory.delete('/dev/qa3', 'mysql') is None
+    with pytest.raises(KeyError):
+        assert inventory._tree.by_path('/dev/qa3')
+    assert_collected_inventory(inventory._tree)
 
 def test_delete_non_existing_key(inventory):
-    inventory.delete('/dev/qa2', 'psql')
+    assert inventory.delete('/dev/qa2', 'psql') is None
+    assert inventory._tree.by_path('/dev/qa2').inventory == {'mysql': 9.0, 'new_key': "my_value"}
+    assert open_inv(inventory, 'dev/qa2') == {'mysql': 9.0, 'new_key': "my_value"}
+    assert_collected_inventory(inventory._tree)
 
-    loaded = inventory.collect()
-    assert loaded == collected_inventory
+
+def test_flush(inventory):
+    inventory._flush()
+    assert open_inv(inventory, "") == {'mysql': 1.0, 'secret': "password"}
+    assert open_inv(inventory, "prod") == {'mysql': 2.0}
+    assert open_inv(inventory, "prod/main") == {'mysql': 3.0}
+    assert open_inv(inventory, "dev/qa1") == {'mysql': 4.0}
+    assert open_inv(inventory, "dev/qa2") == {'mysql': 9.0, 'new_key': 'my_value'}

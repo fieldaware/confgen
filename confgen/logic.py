@@ -1,23 +1,101 @@
-import shutil
-import os
+import operator
+from functools import reduce
 from os.path import join
+from collections import MutableMapping
 import yaml
-import collections
 
-import inventory
-import view
+from . import inventory
+from . import view
+from . import dir_rm
 
+class Node(MutableMapping):
+    path_delimiter = "/"
 
-def flatten_dict(d, parent_key='', sep='/'):
-    items = []
-    for k, v in d.items():
-        new_key = parent_key + sep + k if parent_key else sep + k
-        if isinstance(v, collections.MutableMapping):
-            items.extend(flatten_dict(v, new_key, sep=sep).items())
-        else:
-            items.append((new_key, v))
-    return dict(items)
+    def __init__(self, name, level, parent, root=None):
+        self.name = name
+        self.level = level
+        self.parent = parent
+        self.root = root or self
+        self.children = dict()
+        self.inventory = dict()
 
+    def all(self):
+        # XXX: my spider senses are saying this could be implemented better
+        yield self.root
+        pending = [self.root, ]
+        while pending:
+            for child in pending.pop(0):
+                yield child
+                if child.has_children:
+                    pending.append(child)
+
+    def up(self):
+        node = self
+        while node is not None:  # root's parent is None.
+            yield node
+            node = node.parent
+
+    @property
+    def services(self):
+        return [i for i in self.all() if not i.has_children]
+
+    @property
+    def path(self):
+        return reduce(join, reversed([str(i) for i in self.up()]))
+
+    @property
+    def has_children(self):
+        return bool(self.children)
+
+    def path_to_list(self, path):
+        if path in ('/', ''):
+            return []
+        return path.split(self.path_delimiter)[1:]
+
+    def by_path(self, path):
+        return reduce(operator.getitem, self.path_to_list(path), self.root)
+
+    @property
+    def flatten(self):
+        def merge_dicts(x, y):
+            '''
+            if I only had python3.5 {**x, **y} :<
+            '''
+            c = y.inventory.copy()
+            s_key = "{}__source"
+            # tracking the source. appends a path to a __source key.
+            list(map(lambda i: x.setdefault(s_key.format(i), []).append(y.path), c))
+            c.update(x)
+            return c
+
+        return reduce(merge_dicts, self.up(), {})
+
+    def __repr__(self):
+        return "Node <{}>: {}".format(id(self), self.name)
+
+    def __str__(self):
+        return self.name
+
+    def __getitem__(self, key):
+        return self.children[key]
+
+    def __setitem__(self, key, value):
+        self.children[key] = value
+
+    def __iter__(self):
+        return iter(self.children.values())
+
+    def __len__(self):
+        return len(self.children)
+
+    def __delitem__(self, key):
+        raise ValueError("Deletion not allowed")
+
+    @property
+    def as_dict(self):
+        stages = {i.level: i for i in self.up()}
+        stages.update(self.flatten)
+        return stages
 
 class ConfGen(object):
     build_dir = 'build'
@@ -25,39 +103,44 @@ class ConfGen(object):
     def __init__(self, home, config):
         self.home = home
         self.config = yaml.load(config)
-        self.inventory = inventory.Inventory(home)
-        self.renderer = view.Renderer(self.config['service'], home)
+        assert 'hierarchy' in self.config, "hierarchy list is required"
+        assert 'service' in self.config, "service list is required"
+        assert 'infra' in self.config, "infra tree is required"
+        self.root = self.build_tree(self.config['infra'])
+        self.inventory = inventory.Inventory(self.root, home)
+        self.renderer = view.Renderer(home)
 
-    @property
-    def flatten_infra(self):
-        return flatten_dict(self.config['infra'])
+    def build_tree(self, infra):
+        root = Node('/', self.config['hierarchy'][0], None, None)
 
-    def merge_config_with_inventory(self):
-        public_inventory = self.inventory.build()
-        return {path: self.inventory.invetory_for_path(public_inventory, path) for path in self.flatten_infra}
+        def add_node(infra_sub, name, level, parent):
+            node = Node(name, self.config['hierarchy'][level], parent, root)
+            # add child to parent
+            if parent is not None:
+                parent[str(node)] = node
+            for k in infra_sub:
+                if not isinstance(infra_sub, MutableMapping):
+                    add_node({}, k, level + 1, node)
+                else:
+                    add_node(infra_sub[k], k, level + 1, node)
+        for k in infra:
+            add_node(infra[k], k, 1, root)
+        return root
 
-    def collect(self):
-        config_with_inventory = self.merge_config_with_inventory()
-        config_with_redered_templates = {}
-        for path, service in self.flatten_infra.items():
-            rendered_templates = self.renderer.render_multiple_templates(service, config_with_inventory[path])
-            for template_path, config in rendered_templates.items():
-                config_with_redered_templates['{}/{}'.format(path, template_path)] = config
-        return config_with_redered_templates
-
-    def flush(self, collected):
-        land_dir = join(self.home, self.build_dir)
-        # remove all files to avoid stale configs (they will re-generated)
-        shutil.rmtree(self.build_dir, ignore_errors=True)
-        for path, contents in collected.items():
-            path = path.strip('/')  # remove '/' from the begging
-            # create dirs if they don't exist
-            inventory.mkdir_p(join(land_dir, os.path.dirname(path)))
-            with open(join(land_dir, path), 'w+') as f:
-                f.write(contents)
+    def rendered(self):
+        for service in self.root.services:
+            yield service, self.renderer.service(service)
 
     def build(self):
-        self.flush(self.collect())
+        land_dir = join(self.home, self.build_dir)
+        dir_rm(land_dir)
+        for node, rendered_tempaltes in self.rendered():
+            dst_dir = join(land_dir, node.path.lstrip('/'))
+            # create dirs if they don't exist
+            inventory.mkdir_p(dst_dir)
+            for filename, rendered_config in rendered_tempaltes.items():
+                with open(join(dst_dir, filename), 'w+') as f:
+                    f.write(rendered_config)
 
     def set(self, path, key, value):
         self.inventory.set(path, key, value)

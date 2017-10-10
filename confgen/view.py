@@ -13,44 +13,31 @@ log = getLogger(__name__)
 class Renderer(object):
     templates_dir = 'templates'
 
-    def __init__(self, services, home):
+    def __init__(self, home):
         self.home = home
-        self.services = services
         self.jinja_environ = Environment(
             loader=FileSystemLoader(join(home, self.templates_dir)),
             undefined=StrictUndefined
         )
 
-    def collect_templates(self, services):
-        templates = {}
-        for service in services:
-            service_template_dir = join(self.home, self.templates_dir, service)
-            templates[service] = [join(service, f) for f in sorted(os.listdir(service_template_dir))
-                                  if isfile(join(service_template_dir, f))]
-        return templates
+    def service(self, node):
+        templates_path = join(self.home, self.templates_dir, node.name)
+        rendered = {}
+        for template in (i for i in os.listdir(templates_path) if isfile(join(templates_path, i))):
+            rendered[template] = self.render_template(join(node.name, template), node)
+        return rendered
 
-    def render_multiple_templates(self, services, template_inventory):
-        renders = {}
-        for service in services:
-            renders.update(self.render_templates(service, template_inventory))
-        return renders
-
-    def render_templates(self, service, template_inventory):
-        renders = {}
-        templates = self.collect_templates(self.services)
-        for template in templates[service]:
-            try:
-                renders[template] = (self.jinja_environ.get_template(template)
-                                     .render(template_inventory or {}))
-            except exceptions.UndefinedError as e:
-                log.error("while rendering: {} ({})".format(template, e.message))
-                sys.exit(1)
-        return renders
+    def render_template(self, path, inventory):
+        try:
+            return self.jinja_environ.get_template(path).render(inventory.as_dict)
+        except exceptions.UndefinedError as e:
+            log.error("while rendering: {} ({})".format(path, e.message))
+            sys.exit(1)
 
     @staticmethod
     def render_search_result(result):
         table = []
-        for path, inventory in result.items():
+        for path, inventory in result:
             for ikey, ivalue in inventory.items():
                 table.append((path, ikey, ivalue))
 

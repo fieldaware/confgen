@@ -1,157 +1,143 @@
-import os
-import tempfile
+import pytest
+from os.path import join
 
-def test_merge_config_with_inventory(confgen):
-    built_config = confgen.merge_config_with_inventory()
+def test_confgen_tree_build(confgen):
+    '''
+    Based on:
+    hierarchy:
+      - GLOBAL
+      - STAGE
+      - CLUSTER
+      - SERVICE
 
-    assert built_config == {
-        '/demo': {
-            'mysql': 1.0,
-            'mysql__source': 'mysql:/',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/dev/qa1': {
-            'mysql': 4.0,
-            'mysql__source': 'mysql:/ override:/dev/qa1',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/prod/main/api1': {
-            'mysql': 3.0,
-            'mysql__source': 'mysql:/ override:/prod,/prod/main',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/prod/main/multiapp': {
-            'mysql': 3.0,
-            'mysql__source': 'mysql:/ override:/prod,/prod/main',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/prod/main/webapp1': {
-            'mysql': 3.0,
-            'mysql__source': 'mysql:/ override:/prod,/prod/main',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/prod/staging': {
-            'mysql': 2.0,
-            'mysql__source': 'mysql:/ override:/prod',
-            'secret': 'password',
-            'secret__source': 'secret:/',
-        },
-        '/test': {
-            'mysql': 1.0,
-            'mysql__source': 'mysql:/',
-            'secret': 'plaintext',
-            'secret__source': 'secret:/ override:/test',
-        }
+    infra:
+      prod: # stage
+        main: # cluster
+          - webapp # service
+        multiapp: # cluster
+          *services # service
+        staging:  # cluster
+          *services # service
+
+      dev: # stage
+        qa1: # clusttreeer
+          *services # service
+        qa2: # cluster
+          *services # service
+
+    '''
+    t = confgen.root
+
+    # test Nodes
+    assert t.name == "/"
+    assert t.level == "GLOBAL"
+    assert t.parent is None
+    assert set([str(c) for c in t]) == {'dev', 'prod'}
+
+    assert t['prod'].name == "prod"
+    assert t['prod'].level == "STAGE"
+    assert t['prod'].parent is t
+    assert set([str(c) for c in t['prod']]) == {'main', 'multiapp', 'staging'}
+
+    assert t['prod']['main'].name == "main"
+    assert t['prod']['main'].level == "CLUSTER"
+    assert t['prod']['main'].parent is t['prod']
+    assert [str(c) for c in t['prod']['main']] == ['webapp', ]
+
+    assert t['prod']['multiapp'].name == "multiapp"
+    assert t['prod']['multiapp'].level == "CLUSTER"
+    assert t['prod']['multiapp'].parent is t['prod']
+    assert set([str(c) for c in t['prod']['multiapp']]) == {'webapp', 'api'}
+
+    assert t['prod']['staging'].name == "staging"
+    assert t['prod']['staging'].level == "CLUSTER"
+    assert t['prod']['staging'].parent is t['prod']
+    assert set([str(c) for c in t['prod']['staging']]) == {'webapp', 'api'}
+
+    assert t['dev'].name == "dev"
+    assert t['dev'].level == "STAGE"
+    assert t['dev'].parent is t
+    assert set([str(c) for c in t['dev']]) == {'qa1', 'qa2'}
+
+    assert t['dev']['qa1'].name == "qa1"
+    assert t['dev']['qa1'].level == "CLUSTER"
+    assert t['dev']['qa1'].parent is t['dev']
+    assert set([str(c) for c in t['dev']['qa1']]) == {'webapp', 'api'}
+
+    assert t['dev']['qa2'].name == "qa2"
+    assert t['dev']['qa2'].level == "CLUSTER"
+    assert t['dev']['qa2'].parent is t['dev']
+    assert set([str(c) for c in t['dev']['qa2']]) == {'webapp', 'api'}
+
+    # test Leafs
+    assert t['prod']['main']['webapp'].name == "webapp"
+    assert t['prod']['main']['webapp'].level == "SERVICE"
+    assert t['prod']['main']['webapp'].parent is t['prod']['main']
+
+    assert t['dev']['qa2']['api'].name == 'api'
+    assert t['dev']['qa2']['api'].level == "SERVICE"
+    assert t['dev']['qa2']['api'].parent is t['dev']['qa2']
+
+def test_confgen_tree_path(confgen):
+    assert confgen.root['prod']['main']['webapp'].path == "/prod/main/webapp"
+    assert confgen.root['dev']['qa1']['api'].path == "/dev/qa1/api"
+    assert confgen.root['prod']['main'].path == "/prod/main"
+    assert confgen.root['dev']['qa1'].path == "/dev/qa1"
+    assert confgen.root.path == "/"
+
+def test_confgen_paths(confgen):
+    assert confgen.root.path == '/'
+    assert confgen.root['prod'].path == "/prod"
+    assert confgen.root['dev'].path == "/dev"
+    assert confgen.root['prod']['main'].path == "/prod/main"
+    assert confgen.root['prod']['main']['webapp'].path == "/prod/main/webapp"
+    assert confgen.root['prod']['multiapp']['api'].path == "/prod/multiapp/api"
+    assert confgen.root['dev']['qa1'].path == "/dev/qa1"
+    assert confgen.root['dev']['qa2'].path == '/dev/qa2'
+
+@pytest.mark.parametrize('path,expected', (
+    ('', []),
+    ('/', []),
+    ('/prod', ['prod']),
+    ('/prod/main/webapp', ['prod', 'main', 'webapp'])
+))
+def test_path_to_list(confgen, path, expected):
+    assert confgen.root.path_to_list(path) == expected
+
+def test_confgen_tree_by_path(confgen):
+    assert confgen.root.by_path("/") is confgen.root
+    assert confgen.root.by_path("") is confgen.root
+    assert confgen.root.by_path("/dev/qa1") is confgen.root['dev']['qa1']
+    assert confgen.root.by_path('/dev/qa1/webapp') is confgen.root['dev']['qa1']['webapp']
+
+
+def test_confgen_tree_leafs(confgen):
+    assert set([i.path for i in confgen.root.services]) == {
+        '/prod/main/webapp',
+        '/prod/multiapp/webapp',
+        '/prod/multiapp/api',
+        '/prod/staging/webapp',
+        '/prod/staging/api',
+        '/dev/qa1/webapp',
+        '/dev/qa1/api',
+        '/dev/qa2/webapp',
+        '/dev/qa2/api',
     }
 
-
-def test_collecting_inventory_plus_temaples(confgen):
-    assert confgen.collect() == {
-        '/demo/webapp/my.cnf': u'# mysql:/\n# secret:/\nconnurl = 1.0:password',
-        '/demo/webapp/production.ini': u'# mysql:/\nmysql = 1.0\n\n# secret:/\npassword = password',
-        '/dev/qa1/api/my.cnf': u'# mysql:/ override:/dev/qa1\n# secret:/\nconnurl = 4.0:password',
-        '/dev/qa1/webapp/my.cnf': u'# mysql:/ override:/dev/qa1\n# secret:/\nconnurl = 4.0:password',
-        '/dev/qa1/webapp/production.ini': u'# mysql:/ override:/dev/qa1\nmysql = 4.0\n\n# secret:/\npassword = password',
-        '/prod/main/api1/api/my.cnf': u'# mysql:/ override:/prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        '/prod/main/multiapp/api/my.cnf': u'# mysql:/ override:/prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        '/prod/main/multiapp/webapp/my.cnf': u'# mysql:/ override:/prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        '/prod/main/multiapp/webapp/production.ini': u'# mysql:/ override:/prod,/prod/main\nmysql = 3.0\n\n# secret:/\npassword = password',
-        '/prod/main/webapp1/webapp/my.cnf': u'# mysql:/ override:/prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        '/prod/main/webapp1/webapp/production.ini': u'# mysql:/ override:/prod,/prod/main\nmysql = 3.0\n\n# secret:/\npassword = password',
-        '/prod/staging/api/my.cnf': u'# mysql:/ override:/prod\n# secret:/\nconnurl = 2.0:password',
-        '/prod/staging/webapp/my.cnf': u'# mysql:/ override:/prod\n# secret:/\nconnurl = 2.0:password',
-        '/prod/staging/webapp/production.ini': u'# mysql:/ override:/prod\nmysql = 2.0\n\n# secret:/\npassword = password',
-        '/test/api/my.cnf': u'# mysql:/\n# secret:/ override:/test\nconnurl = 1.0:plaintext',
-        '/test/webapp/my.cnf': u'# mysql:/\n# secret:/ override:/test\nconnurl = 1.0:plaintext',
-        '/test/webapp/production.ini': u'# mysql:/\nmysql = 1.0\n\n# secret:/ override:/test\npassword = plaintext'
-    }
-
-
-def test_flush_path_exists(confgen):
-    rootdir = tempfile.mkdtemp()
-    confgen.home = rootdir
-    os.makedirs(os.path.join(rootdir, confgen.build_dir, 'webapp'))
-    collected = {
-        '/webapp/production.ini': "FILE_CONTENTS"
-    }
-    confgen.flush(collected)
-    assert open(os.path.join(rootdir, confgen.build_dir, 'webapp/production.ini')).read() == "FILE_CONTENTS"
-
-def test_flush_path_doesnt_exist(confgen):
-    rootdir = tempfile.mkdtemp()
-    confgen.home = rootdir
-    collected = {
-        '/long/complex/path/webapp/production.ini': "FILE_CONTENTS"
-    }
-    confgen.flush(collected)
-    assert open(os.path.join(rootdir, confgen.build_dir, 'long/complex/path/webapp/production.ini')).read() == "FILE_CONTENTS"
-
-
-def test_flush_multiple_files(confgen):
-    rootdir = tempfile.mkdtemp()
-    confgen.home = rootdir
-    collected = {
-        '/prod/main/multiapp/webapp/my.cnf': "FILE_CONTENTS",
-        '/prod/main/multiapp/webapp/production.ini': "FILE_CONTENTS",
-        '/prod/main/multiapp/api/my.cnf': "FILE_CONTENTS",
-        '/prod/main/webapp1/webapp/my.cnf': "FILE_CONTENTS",
-        '/prod/main/webapp1/webapp/production.ini': "FILE_CONTENTS",
-        '/prod/staging/webapp/my.cnf': "FILE_CONTENTS",
-        '/prod/staging/webapp/production.ini': "FILE_CONTENTS",
-        '/prod/staging/api/my.cnf': "FILE_CONTENTS",
-        '/test/webapp/my.cnf': "FILE_CONTENTS",
-        '/test/webapp/production.ini': "FILE_CONTENTS",
-    }
-    confgen.flush(collected)
-
-    j = lambda x: os.path.join(rootdir, confgen.build_dir, x)
-    assert open(j('prod/main/multiapp/webapp/my.cnf')).read() == "FILE_CONTENTS"
-    assert open(j('prod/main/multiapp/webapp/production.ini')).read() == "FILE_CONTENTS"
-    assert open(j('prod/main/multiapp/api/my.cnf')).read() == "FILE_CONTENTS"
-    assert open(j('prod/main/webapp1/webapp/my.cnf')).read() == "FILE_CONTENTS"
-    assert open(j('prod/main/webapp1/webapp/production.ini')).read() == "FILE_CONTENTS"
-    assert open(j('prod/staging/webapp/my.cnf')).read() == "FILE_CONTENTS"
-    assert open(j('prod/staging/webapp/production.ini')).read() == "FILE_CONTENTS"
-    assert open(j('prod/staging/api/my.cnf')).read() == "FILE_CONTENTS"
-    assert open(j('test/webapp/my.cnf')).read() == "FILE_CONTENTS"
-    assert open(j('test/webapp/production.ini')).read() == "FILE_CONTENTS"
-
-
-def test_build(confgen):
-    rootdir = tempfile.mkdtemp()
-    confgen.home = rootdir
-
+def test_confgen_build(confgen):
     confgen.build()
-
-    build_files = {}
-    for path, _, files in os.walk(os.path.join(confgen.home, confgen.build_dir)):
-        if files:
-            for f in files:
-                f_path = os.path.join(path, f)
-                build_files[f_path] = open(f_path).read()
-
-    j = lambda x: os.path.join(rootdir, confgen.build_dir, x.strip('/'))
-    assert build_files == {
-        j('/demo/webapp/my.cnf'): '# mysql:/\n# secret:/\nconnurl = 1.0:password',
-        j('/demo/webapp/production.ini'): '# mysql:/\nmysql = 1.0\n\n# secret:/\npassword = password',
-        j('/dev/qa1/api/my.cnf'): '# mysql:/ override:/dev/qa1\n# secret:/\nconnurl = 4.0:password',
-        j('/dev/qa1/webapp/my.cnf'): '# mysql:/ override:/dev/qa1\n# secret:/\nconnurl = 4.0:password',
-        j('/dev/qa1/webapp/production.ini'): '# mysql:/ override:/dev/qa1\nmysql = 4.0\n\n# secret:/\npassword = password',
-        j('/prod/main/api1/api/my.cnf'): '# mysql:/ override:/prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        j('/prod/main/multiapp/api/my.cnf'): '# mysql:/ override:/prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        j('/prod/main/multiapp/webapp/my.cnf'): '# mysql:/ override:/prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        j('/prod/main/multiapp/webapp/production.ini'): '# mysql:/ override:/prod,/prod/main\nmysql = 3.0\n\n# secret:/\npassword = password',
-        j('/prod/main/webapp1/webapp/my.cnf'): '# mysql:/ override:/prod,/prod/main\n# secret:/\nconnurl = 3.0:password',
-        j('/prod/main/webapp1/webapp/production.ini'): '# mysql:/ override:/prod,/prod/main\nmysql = 3.0\n\n# secret:/\npassword = password',
-        j('/prod/staging/api/my.cnf'): '# mysql:/ override:/prod\n# secret:/\nconnurl = 2.0:password',
-        j('/prod/staging/webapp/my.cnf'): '# mysql:/ override:/prod\n# secret:/\nconnurl = 2.0:password',
-        j('/prod/staging/webapp/production.ini'): '# mysql:/ override:/prod\nmysql = 2.0\n\n# secret:/\npassword = password',
-        j('/test/api/my.cnf'): '# mysql:/\n# secret:/ override:/test\nconnurl = 1.0:plaintext',
-        j('/test/webapp/my.cnf'): '# mysql:/\n# secret:/ override:/test\nconnurl = 1.0:plaintext',
-        j('/test/webapp/production.ini'): '# mysql:/\nmysql = 1.0\n\n# secret:/ override:/test\npassword = plaintext',
-    }
+    f = lambda p: open(join(confgen.home, confgen.build_dir, p)).read()
+    assert f('prod/main/webapp/my.cnf') == "/ prod main webapp"
+    assert f('prod/main/webapp/production.ini') == "3.0 password main multiapp staging"
+    assert f('prod/multiapp/webapp/my.cnf') == "/ prod multiapp webapp"
+    assert f('prod/multiapp/webapp/production.ini') == "2.0 password main multiapp staging"
+    assert f('prod/multiapp/api/my.cnf') == "/ prod multiapp api"
+    assert f('prod/staging/webapp/my.cnf') == "/ prod staging webapp"
+    assert f('prod/staging/webapp/production.ini') == "2.0 password main multiapp staging"
+    assert f('prod/staging/api/my.cnf') == "/ prod staging api"
+    assert f('dev/qa1/webapp/my.cnf') == "/ dev qa1 webapp"
+    assert f('dev/qa1/webapp/production.ini') == "4.0 password qa1 qa2"
+    assert f('dev/qa1/api/my.cnf') == "/ dev qa1 api"
+    assert f('dev/qa2/webapp/my.cnf') == "/ dev qa2 webapp"
+    assert f('dev/qa2/webapp/production.ini') == "9.0 password qa1 qa2"
+    assert f('dev/qa2/api/my.cnf') == "/ dev qa2 api"
