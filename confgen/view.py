@@ -30,7 +30,7 @@ class Renderer(object):
     def render_template(self, path, inventory):
         try:
             return self.jinja_environ.get_template(path).render(inventory.as_dict)
-        except exceptions.UndefinedError as e:
+        except Exception as e:
             log.error("while rendering: {} ({})".format(path, e.message))
             sys.exit(1)
 
