@@ -12,6 +12,7 @@ log = getLogger(__name__)
 
 class Renderer(object):
     templates_dir = 'templates'
+    ignore_exts = ["swp", "swo"]
 
     def __init__(self, home):
         self.home = home
@@ -24,6 +25,9 @@ class Renderer(object):
         templates_path = join(self.home, self.templates_dir, node.name)
         rendered = {}
         for template in (i for i in os.listdir(templates_path) if isfile(join(templates_path, i))):
+            if any([template.endswith(i) for i in self.ignore_exts]):
+                log.warning('Ignoring file: {} because of its extension'.format(template))
+                continue
             rendered[template] = self.render_template(join(node.name, template), node)
         return rendered
 
