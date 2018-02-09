@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/fieldaware/confgen.svg?style=svg)](https://circleci.com/gh/fieldaware/confgen)
+[![Build Status](https://travis-ci.org/fieldaware/confgen.svg?branch=master)](https://travis-ci.org/fieldaware/confgen)
 
 
 # Intro
