@@ -20,6 +20,12 @@ def cli(ctx, ct_home, config):
     ctx.obj = ConfGen(ct_home, config)
 
 
+@cli.command()
+@click.pass_obj
+def inventory(ctx):
+    print(ctx.entire_inventory())
+
+
 @cli.group()
 def search():
     pass

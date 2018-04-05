@@ -142,6 +142,10 @@ class ConfGen(object):
                 with open(join(dst_dir, filename), 'w+') as f:
                     f.write(rendered_config)
 
+    def entire_inventory(self):
+        renderable = ((i.path, i.inventory) for i in self.inventory._tree.all())
+        return self.renderer.render_search_result(renderable)
+
     def set(self, path, key, value):
         self.inventory.set(path, key, value)
 
