@@ -127,14 +127,14 @@ class ConfGen(object):
             add_node(infra[k], k, 1, root)
         return root
 
-    def rendered(self):
-        for service in self.root.services:
-            yield service, self.renderer.service(service)
-
     def build(self):
+        # try to render templates
+        rendered = [(s, self.renderer.service(s)) for s in self.root.services]
         land_dir = join(self.home, self.build_dir)
+        # remove old tree
         dir_rm(land_dir)
-        for node, rendered_tempaltes in self.rendered():
+        # flush the files
+        for node, rendered_tempaltes in rendered:
             dst_dir = join(land_dir, node.path.lstrip('/'))
             # create dirs if they don't exist
             inventory.mkdir_p(dst_dir)
