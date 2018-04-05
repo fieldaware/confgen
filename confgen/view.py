@@ -35,7 +35,7 @@ class Renderer(object):
         try:
             return self.jinja_environ.get_template(path).render(inventory.as_dict)
         except Exception as e:
-            log.error("while rendering: {} ({})".format(path, e.message))
+            log.error("while rendering: {} ({})".format(join(inventory.path, path), e.message))
             sys.exit(1)
 
     @staticmethod
