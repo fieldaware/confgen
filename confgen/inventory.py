@@ -44,7 +44,7 @@ class Inventory(object):
         """
         for path, dirs, files in os.walk(self.inventory_dir):
             if files:
-                configyml = yaml.load(open(join(path, self.config_filename)))
+                configyml = yaml.load(open(join(path, self.config_filename))) or {}
                 try:
                     self._tree.by_path(self._parse_file_path(path)).inventory = configyml
                 except KeyError:
