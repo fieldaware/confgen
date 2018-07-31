@@ -1,0 +1,14 @@
+hierarchy:
+  - GLOBAL
+  - STAGE
+  - CLUSTER
+
+infra:
+  prod: # stage
+    - main # cluster
+    - multiapp # cluster
+    - staging  # cluster
+
+  dev: # stage
+    - qa1 # cluster
+    - qa2 # cluster

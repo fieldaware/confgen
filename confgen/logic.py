@@ -8,6 +8,7 @@ from . import inventory
 from . import view
 from . import dir_rm
 
+
 class Node(MutableMapping):
     path_delimiter = "/"
 
@@ -36,7 +37,7 @@ class Node(MutableMapping):
             node = node.parent
 
     @property
-    def services(self):
+    def leaves(self):
         return [i for i in self.all() if not i.has_children]
 
     @property
@@ -97,6 +98,7 @@ class Node(MutableMapping):
         stages.update(self.flatten)
         return stages
 
+
 class ConfGen(object):
     build_dir = 'build'
 
@@ -104,8 +106,11 @@ class ConfGen(object):
         self.home = home
         self.config = yaml.load(config)
         assert 'hierarchy' in self.config, "hierarchy list is required"
-        assert 'service' in self.config, "service list is required"
         assert 'infra' in self.config, "infra tree is required"
+        if 'service' not in self.config:
+            self.single_service = True
+        else:
+            self.single_service = False
         self.root = self.build_tree(self.config['infra'])
         self.inventory = inventory.Inventory(self.root, home)
         self.renderer = view.Renderer(home)
@@ -129,7 +134,8 @@ class ConfGen(object):
 
     def build(self):
         # try to render templates
-        rendered = [(s, self.renderer.service(s)) for s in self.root.services]
+        rendered = [(s, self.renderer.service(s, self.single_service))
+                    for s in self.root.leaves]
         land_dir = join(self.home, self.build_dir)
         # remove old tree
         dir_rm(land_dir)
@@ -143,7 +149,8 @@ class ConfGen(object):
                     f.write(rendered_config)
 
     def entire_inventory(self):
-        renderable = ((i.path, i.inventory) for i in self.inventory._tree.all())
+        renderable = ((i.path, i.inventory)
+                      for i in self.inventory._tree.all())
         return self.renderer.render_search_result(renderable)
 
     def set(self, path, key, value):
