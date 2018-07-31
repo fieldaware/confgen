@@ -1,6 +1,7 @@
 import pytest
 from os.path import join
 
+
 def test_confgen_tree_build(confgen):
     '''
     Based on:
@@ -78,12 +79,14 @@ def test_confgen_tree_build(confgen):
     assert t['dev']['qa2']['api'].level == "SERVICE"
     assert t['dev']['qa2']['api'].parent is t['dev']['qa2']
 
+
 def test_confgen_tree_path(confgen):
     assert confgen.root['prod']['main']['webapp'].path == "/prod/main/webapp"
     assert confgen.root['dev']['qa1']['api'].path == "/dev/qa1/api"
     assert confgen.root['prod']['main'].path == "/prod/main"
     assert confgen.root['dev']['qa1'].path == "/dev/qa1"
     assert confgen.root.path == "/"
+
 
 def test_confgen_paths(confgen):
     assert confgen.root.path == '/'
@@ -95,6 +98,7 @@ def test_confgen_paths(confgen):
     assert confgen.root['dev']['qa1'].path == "/dev/qa1"
     assert confgen.root['dev']['qa2'].path == '/dev/qa2'
 
+
 @pytest.mark.parametrize('path,expected', (
     ('', []),
     ('/', []),
@@ -104,15 +108,17 @@ def test_confgen_paths(confgen):
 def test_path_to_list(confgen, path, expected):
     assert confgen.root.path_to_list(path) == expected
 
+
 def test_confgen_tree_by_path(confgen):
     assert confgen.root.by_path("/") is confgen.root
     assert confgen.root.by_path("") is confgen.root
     assert confgen.root.by_path("/dev/qa1") is confgen.root['dev']['qa1']
-    assert confgen.root.by_path('/dev/qa1/webapp') is confgen.root['dev']['qa1']['webapp']
+    assert confgen.root.by_path(
+        '/dev/qa1/webapp') is confgen.root['dev']['qa1']['webapp']
 
 
-def test_confgen_tree_leafs(confgen):
-    assert set([i.path for i in confgen.root.services]) == {
+def test_confgen_tree_leaves(confgen):
+    assert set([i.path for i in confgen.root.leaves]) == {
         '/prod/main/webapp',
         '/prod/multiapp/webapp',
         '/prod/multiapp/api',
@@ -124,9 +130,11 @@ def test_confgen_tree_leafs(confgen):
         '/dev/qa2/api',
     }
 
+
 def test_confgen_build(confgen):
     confgen.build()
-    f = lambda p: open(join(confgen.home, confgen.build_dir, p)).read()
+
+    def f(p): return open(join(confgen.home, confgen.build_dir, p)).read()
     assert f('prod/main/webapp/my.cnf') == "/ prod main webapp"
     assert f('prod/main/webapp/production.ini') == "3.0 password main multiapp staging"
     assert f('prod/multiapp/webapp/my.cnf') == "/ prod multiapp webapp"

@@ -21,21 +21,26 @@ class Renderer(object):
             undefined=StrictUndefined
         )
 
-    def service(self, node):
-        templates_path = join(self.home, self.templates_dir, node.name)
+    def service(self, node, anon_service=False):
+        if anon_service:
+            template_subdir = ''
+        else:
+            template_subdir = node.name
+        templates_path = join(self.home, self.templates_dir, template_subdir)
         rendered = {}
         for template in (i for i in os.listdir(templates_path) if isfile(join(templates_path, i))):
             if any([template.endswith(i) for i in self.ignore_exts]):
                 log.warning('Ignoring file: {} because of its extension'.format(template))
                 continue
-            rendered[template] = self.render_template(join(node.name, template), node)
+            rendered[template] = self.render_template(join(template_subdir, template), node)
         return rendered
 
     def render_template(self, path, inventory):
         try:
             return self.jinja_environ.get_template(path).render(inventory.as_dict)
         except Exception as e:
-            log.error("while rendering: {} ({})".format(join(inventory.path, path), e.message))
+            log.error("while rendering: {} ({})".format(
+                join(inventory.path, path), e.message))
             sys.exit(1)
 
     @staticmethod
